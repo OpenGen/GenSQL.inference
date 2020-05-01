@@ -12,10 +12,6 @@
 (s/fdef optimized-row-generator
   :args (s/cat :spec ::spec/multi-mixture))
 
-#_(clojure.spec.test.alpha/instrument)
-
-#?(:cljs (enable-console-print!))
-
 (defn optimized-row-generator
   [spec]
   (let [row-generator (mmix/row-generator spec)]

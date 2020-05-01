@@ -58,19 +58,10 @@
   [trace view-i cluster-i]
   (assoc-in trace [:cluster-assignments-for-view view-i :value] cluster-i))
 
-#_(-> {}
-      (with-cluster-assignment 0 0)
-      (with-cluster-assignment 1 0))
-
 (defn with-cell-value
   "Sets the cell value in trace for variable var to value v."
   [trace var v]
   (assoc-in trace [:columns var :value] v))
-
-#_(-> {}
-      (with-cell-value "x" 27)
-      (with-cell-value "a" 99)
-      (with-cell-value "y" 3))
 
 (defn with-row-values
   "Sets the values in the trace for cells in row to their values."
@@ -79,10 +70,6 @@
                (with-cell-value trace var v))
              trace
              row))
-
-#_(with-row-values {} {"x" 27
-                       "a" 99
-                       "y" 3})
 
 (defn uniform-categorical-params
   [n]
@@ -96,8 +83,6 @@
                                (assoc acc i (with-row-values {} row)))
                              {}
                              (map-indexed vector rows))))
-
-#_(with-rows {} [{"a" 1, "b" 2}])
 
 (s/fdef all-latents
   :args (s/cat :spec ::spec/multi-mixture))
@@ -114,11 +99,3 @@
                     (map-indexed (fn [view-i cluster-i]
                                    {view-i {:value cluster-i}}))
                     (into {}))}))))
-
-#_(require '[metaprob.prelude :as mp])
-#_(require '[inferenceql.inference.multimixture.specification-test :as spec-test])
-
-#_(let [spec spec-test/mmix]
-    (->> (all-latents spec)
-         #_(map (comp last #(mp/infer-and-score :procedure (row-generator spec)
-                                                :observation-trace %)))))

@@ -91,10 +91,6 @@
     {:vars vars
      :views views}))
 
-
-#_(from-json (json/read-str (slurp "/Users/zane/projects/inferenceql/model.json")))
-#_(stest/instrument)
-
 (s/fdef cluster-variables
   :args (s/cat :cluster ::cluster)
   :ret (s/coll-of ::column))

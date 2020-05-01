@@ -61,8 +61,6 @@
                               (Math/pow e (- 0 eps))))]
       (if condition-2 (recur) eps))))
 
-#_(mp/infer-and-score :procedure cljs-beta :inputs [0.001 0.001])
-
 (s/fdef beta-pdf
   :args (s/cat :v ::spec/probability
                :args (s/tuple ::spec/alpha ::spec/beta)))
@@ -120,61 +118,3 @@
           (mp/log (incanter.distributions/pdf
                    (incanter.distributions/beta-distribution alpha beta)
                    x))))
-
-(comment
-  (require '[zane.vega.repl :as vega])
-  (let [alpha 0.01
-        beta 0.01
-        n-samples 10000
-        mp-samples (mapv #(hash-map :beta % :type "metaprob") (repeatedly n-samples #(metaprob.distributions/beta alpha beta)))
-        our-samples (mapv #(hash-map :beta % :type "custom") (repeatedly n-samples #(beta-sampler {:alpha alpha :beta beta})))
-        step 0.01
-        #_#(beta-sampler {:alpha 0.01 :beta 0.01})]
-    (vega/vega {:$schema "https://vega.github.io/schema/vega-lite/v3.json"
-                :width 600
-                :height 600
-                :layer [{:data {:values mp-samples}
-                         :mark {:type "bar"
-                                :color "red"
-                                :opacity 0.5}
-                         :encoding {:x {:bin {:step step}
-                                        :field "beta"
-                                        :type "quantitative"}
-                                    :y {:aggregate "count"
-                                        :type "quantitative"}}}
-                        {:data {:values our-samples}
-                         :mark {:type "bar"
-                                :color "blue"
-                                :opacity 0.5}
-                         :encoding {:x {:bin {:step step}
-                                        :field "beta"
-                                        :type "quantitative"}
-                                    :y {:aggregate "count"
-                                        :type "quantitative"}}}]}))
-
-  (let [alpha 0.01
-        beta 0.01
-        our-pdfs (->> (range 1/100 1 1/100)
-                      (map #(hash-map :x (float %)
-                                      :y (beta-scorer % [{:alpha alpha :beta beta}]))))
-        mp-pdfs (->> (range 1/100 1 1/100)
-                     (map #(hash-map :x (float %)
-                                     :y (mp-beta-scorer % [alpha beta]))))]
-    (vega/vega {:width 600
-                :height 600
-                :layer [{:data {:values mp-pdfs}
-                         :mark {:type "line"
-                                :color "red"
-                                :opacity 0.5}
-                         :encoding
-                         {:x {:field "x" :type "quantitative"}
-                          :y {:field "y" :type "quantitative"}}}
-                        {:data {:values our-pdfs}
-                         :mark {:type "line"
-                                :color "blue"
-                                :opacity 0.5}
-                         :encoding
-                         {:x {:field "x" :type "quantitative"}
-                          :y {:field "y" :type "quantitative"}}}]}))
-
-  )
