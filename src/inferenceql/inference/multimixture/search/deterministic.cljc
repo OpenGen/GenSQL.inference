@@ -7,8 +7,7 @@
 (defn update-beta-params
   "Updates beta params for each component, within each view."
   [beta-params known-rows new-column-key num-clusters known-probs]
-  (let [n               (count known-probs)
-        obs-probs-pairs (map vector known-probs (map #(get % new-column-key) known-rows))
+  (let [obs-probs-pairs (map vector known-probs (map #(get % new-column-key) known-rows))
         true-obs        (filter #(second %) obs-probs-pairs)
         false-obs       (filter #(not (second %)) obs-probs-pairs)
         obs-func        (fn [obs param]

@@ -1,6 +1,5 @@
 (ns inferenceql.inference.multimixture.metrics
-  (:require [inferenceql.inference.multimixture :as mmix]
-            [inferenceql.inference.multimixture.specification :as spec]))
+  (:require [inferenceql.inference.multimixture :as mmix]))
 
 (defn check-distribution-criteria
   "Checks basic assumptions about two distributions being compared.
@@ -26,7 +25,8 @@
                                 (if (== qi 0)
                                   (if (== pi 0)
                                     0
-                                    Integer/MIN_VALUE)
+                                    #?(:clj Integer/MIN_VALUE
+                                       :cljs js/Number.MIN_SAFE_INTEGER))
                                   (* pi (Math/log (/ pi qi)))))
                               p q))]
     ;; If the result is negative, that means pi != 0 when qi == 0 for all i

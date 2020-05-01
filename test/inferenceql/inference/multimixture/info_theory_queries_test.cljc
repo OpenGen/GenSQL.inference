@@ -1,8 +1,8 @@
 (ns inferenceql.inference.multimixture.info-theory-queries-test
-  (:require [clojure.test :as test :refer [deftest testing is]]
+  (:require #?(:clj [clojure.test :as test :refer [deftest testing is]]
+               :cljs [clojure.test :as test :refer [deftest is]])
             [inferenceql.inference.utils :as utils]
             #?(:clj [inferenceql.inference.plotting.generate-vljson :as plot])
-            [inferenceql.inference.multimixture.specification :as spec]
             [inferenceql.inference.multimixture.search :as search]
             [inferenceql.inference.gpm :as gpm]))
 
@@ -59,8 +59,8 @@
 
 (def sampled-points-for-plot 1000)
 
+;; This tests saves plots for all simulated data in out/json results/
 #?(:clj (deftest simulate-from-MI-model
-          "This tests saves plots for all simulated data in out/json results/"
           ;; Plots can be generated with `make plots`.
          (testing "(smoke) simulate n complete rows and save them as vl-json"
            (let [samples (gpm/simulate

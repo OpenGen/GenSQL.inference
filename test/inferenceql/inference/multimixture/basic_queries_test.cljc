@@ -194,8 +194,7 @@
           ;; This tests saves plots for all simulated data in out/json results/
           ;; Plots can be generated with `make plots`.
           (testing "(smoke) simulate n complete rows and save them as vl-json"
-            (let [num-samples plot-point-count
-                  point-data (map-indexed (fn [index point]
+            (let [point-data (map-indexed (fn [index point]
                                             (reduce-kv (fn [m k v]
                                                          (assoc m (keyword (str "t" (name k))) v))
                                                        {:test-point (str "P " (inc index))}
@@ -266,7 +265,7 @@
 (deftest simulations-conditioned-on-points
   ;; Tests that if we simulate conditioned on the test points we are simulating
   ;; from the right clusters.
-  (doseq [[point-id clusters] (invert-map cluster-point-mapping)]
+  (doseq [point-id (vals cluster-point-mapping)]
     (testing (str "Conditioned on point P" point-id)
       (let [point   (stringify-keys (test-point point-id))
             samples (gpm/simulate gpm-mmix {} point simulation-count)]

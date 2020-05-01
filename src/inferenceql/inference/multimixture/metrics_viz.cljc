@@ -1,10 +1,6 @@
 (ns inferenceql.inference.multimixture.metrics-viz
-  (:require [clojure.spec.alpha :as s]
-            [clojure.string :refer [split]]
-            [inferenceql.inference.multimixture :as mmix]
+  (:require [clojure.string :refer [split]]
             [inferenceql.inference.multimixture.metrics :as metrics]
-            [inferenceql.inference.multimixture.specification :as spec]
-            [clojure.data.json :as json]
             [zane.vega.repl :refer [vega]]))
 
 (defmacro with-out-str-data-time-map
@@ -112,6 +108,7 @@
                   (process-time-data-with-metric
                    metrics/jensen-shannon-divergence dist-2 dist-2-data-no-metric js-title dist-2-title))]
     {:$schema "https://vega.github.io/schema/vega-lite/v4.json"
+     :title title
      :data {:values all-data}
      :vconcat [{:mark "point"
                 :transform [{:filter "datum['dist-title'] === 'Bernoulli Variable'"}]

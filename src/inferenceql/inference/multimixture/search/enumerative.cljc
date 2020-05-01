@@ -32,8 +32,7 @@
   configurations, returns the list of respective probabilities of said configurations
   multiplied by the beta-parameter update."
   [probs known-labels beta-params configs]
-  (let [num-known    (count known-labels)
-        num-clusters (count (first probs))]
+  (let [num-clusters (count (first probs))]
     (map (fn [config]
            ;; Calculate probability of each assignment and take the product.
            (let [prob-config (reduce * (map-indexed
@@ -55,7 +54,6 @@
   [spec new-column-key known-rows unknown-rows beta-params]
   (let [[known-probs unknown-probs] (utils/generate-cluster-row-probability-table spec known-rows unknown-rows)
         num-clusters                (count (get-in spec [:views 0]))
-        num-rows                    (+ (count unknown-rows) (count known-rows))
         known-probs-single-view     (vec (nth   known-probs 0)) ;; hard coded for one view.
         unknown-probs-single-view   (vec (nth unknown-probs 0)) ;; hard coded for one view.
         known-labels                (mapv #(get % new-column-key) known-rows)

@@ -1,11 +1,6 @@
 (ns inferenceql.inference.multimixture.search.deterministic-test
-  (:require [clojure.spec.alpha :as s]
-            [clojure.test :as test :refer [deftest testing is]]
-            [clojure.walk :as walk :refer [stringify-keys]]
-            #?(:clj [clojure.string :as str])
-            [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.multimixture.search.deterministic :as deterministic]
-            [metaprob.distributions :as dist]))
+  (:require [clojure.test :as test :refer [deftest is]]
+            [inferenceql.inference.multimixture.search.deterministic :as deterministic]))
 
 (def two-gaussian-no-observations-spec
   {:vars {"x" :gaussian}

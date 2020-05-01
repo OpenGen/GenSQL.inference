@@ -99,13 +99,6 @@
 
 #_(with-rows {} [{"a" 1, "b" 2}])
 
-(defn- valueify
-  [m]
-  (reduce-kv (fn [m k v]
-               (assoc m k {:value v}))
-             {}
-             m))
-
 (s/fdef all-latents
   :args (s/cat :spec ::spec/multi-mixture))
 

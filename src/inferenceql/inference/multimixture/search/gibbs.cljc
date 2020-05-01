@@ -7,8 +7,7 @@
   table is of the form P[view][row][cluster]. Currently assumes one view, so
   the table should be of the form P[row][cluster]."
   [probs]
-  (let [n-rows     (count probs)
-        n-clusters (count (first probs))]
+  (let [n-rows (count probs)]
     (mapv #(-> probs
                (nth %)
                (dist/categorical))

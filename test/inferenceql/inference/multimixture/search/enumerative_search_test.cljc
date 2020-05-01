@@ -1,11 +1,11 @@
 (ns inferenceql.inference.multimixture.search.enumerative-search-test
-  (:require [clojure.test :as test :refer [deftest testing is]]
+  "Enumerative tests."
+  (:require [clojure.test :as test :refer [deftest is]]
             [inferenceql.inference.multimixture.search.enumerative :as enumerative]))
 
-;; Enumerative tests.
+;; Checks that all configurations are returned for a specified number of rows
+;; and clusters.
 (deftest rows->all-cluster-configurations
-  "Checks that all configurations are returned for a specified
-  number of rows and clusters."
   (let [num-rows     2
         num-clusters 2
         single-row   1]
@@ -19,9 +19,9 @@
             single-row
             num-clusters)))))
 
+;; Checks that the returned posterior probability is correct regardless of
+;; cluster assignment.
 (deftest cluster-config->beta-update
-  "Checks that the returned posterior probability is
-  correct regardless of cluster assignment."
   ;; Walkthrough of the first test.
   ;; alpha'_0 = alpha_0 + #_true = 0.5 + 1 = 1.5
   ;; beta'_0  = beta_0  + #_false = 0.5 + 0 = 0.5
@@ -56,10 +56,10 @@
             prob-config
             beta-params)))))
 
+;; Ensures correct access to probability table and calculation of
+;; configuration probability, which weights the posterior probability for a
+;; particular cluster.
 (deftest cluster-configs->beta-updates
-  "Ensures correct access to probability table and calculation
-  of configuration probability, which weights the posterior
-  probability for a particular cluster."
   ;; Involved walkthrough, review the walkthrough in
   ;; `cluster-config->beta-update` before continuing.
   ;;
@@ -76,7 +76,6 @@
   ;; update_1 =  0.125 * 0.5 = 0.0625
   (let [known-labels [true false]
         configs      [[0 1] [0 0]]
-        num-clusters 2
         probs        [[0.5 0.5] [0.25 0.75]]
         beta-params {:alpha 0.5 :beta 0.5}]
     (is (= `([0.28125 0.09375] [0.0625 0.0625])
@@ -86,8 +85,8 @@
             beta-params
             configs)))))
 
+;; Smoke test for enumerative search.
 (deftest enumerative-search
-  "Smoke test for enumerative search."
   ;; `search` sums across all configurations to get predictive probabilities,
   ;; then sums over c_k for each row, P[c_k | row] * P[True | c_k].
   (let [spec          {:vars {"x" :gaussian}

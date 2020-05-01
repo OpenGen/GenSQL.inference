@@ -1,11 +1,11 @@
 (ns inferenceql.inference.multimixture.search.gibbs-search-test
-  (:require [clojure.test :as test :refer [deftest testing is]]
+  "Gibbs sampling tests."
+  (:require [clojure.test :as test :refer [deftest is]]
             [inferenceql.inference.multimixture.utils :as mmix-utils]
             [inferenceql.inference.multimixture.search.gibbs :as gibbs]))
 
-;; Gibbs sampling tests.
+;; Checks that sampled values of clusters are within reason.
 (deftest sample-cluster-assignments
-  "Checks that sampled values of clusters are within reason."
   (let [probs      [[0.1 0.3 0.6]
                     [0.4 0.2 0.4]]
         n-clusters (count (first probs))
@@ -17,23 +17,23 @@
                                     (into (sorted-map))
                                     (mapv second)))
                         (mapv #(let [sum (apply + %)]
-                                 (mapv (fn [el] (/ el sum)) %))))]
-    ;; Sums the absolute residuals between empirical distribution
-    ;; and true distribution, and checks that it is below the
-    ;; threshhold.
-    (is (< (/ (->> (map (fn [prob sample]
-                          (->> (map - prob sample)
-                               (map #(is (< (Math/abs %) 0.01))))
-                          probs sampled))
-                   (flatten)
-                   (map #(max % (- %)))
-                   (apply +))
+                                 (mapv (fn [el] (/ el sum)) %))))
+        ;; Sums the absolute residuals between empirical distribution
+        ;; and true distribution, and checks that it is below the
+        ;; threshhold.
+        residuals (->> (mapcat #(map - %1 %2)
+                               probs
+                               sampled)
+                       (map #(Math/abs %)))]
+    (doseq [residual residuals]
+      (is (< residual 0.05)))
+    (is (< (/ (apply + residuals)
               total-el)
-           0.01))))
+           0.05))))
 
+;; Checks that given cluster assignments for all rows, the posterior
+;; probabilities are correctly calculated.
 (deftest cluster-assignments->thetas
-  "Checks that given cluster assignments for all rows, the posterior
-  probabilities are correctly calculated."
   (let [diff-assign  [0 1]
         same-assign  [0 0]
         beta-params  {:alpha 0.5 :beta 0.5}
@@ -54,16 +54,16 @@
     ;; Assignments contain one cluster.
     (is (= [0.50 0.50] same-thetas))))
 
+;; Verifies the mapping from cluster configuration to cluster posterior.
 (deftest thetas->pred-probs
-  "Verifies the mapping from cluster configuration to cluster posterior."
   (let [unknown-clusters [0 1 0]
         thetas           [0.3 0.7]]
     (is (= [0.3 0.7 0.3] (gibbs/thetas->pred-probs
                           unknown-clusters
                           thetas)))))
 
+;; Smoke test for Gibbs row sampling search.
 (deftest gibbs-search
-  "Smoke test for Gibbs row sampling search."
   ;; Gibbs search works as the following.
   ;;  0. Generate probability table given the spec and rows.
   ;;  1. For iter = 1 .. iters:

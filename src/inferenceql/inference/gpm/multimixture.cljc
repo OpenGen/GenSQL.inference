@@ -1,7 +1,7 @@
 (ns inferenceql.inference.gpm.multimixture
   (:require [metaprob.distributions :as dist]
             [metaprob.prelude :as mp]
-            [metaprob.generative-functions :as g :refer [at gen]]
+            [metaprob.generative-functions :as g :refer [gen]]
             [inferenceql.inference.multimixture :as mmix]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm.proto :as gpm-proto]))
@@ -34,28 +34,27 @@
 
 ;; XXX Currently, assumes that the row generator of the mmix map is passed in.
 (defrecord Multimixture
-  [model]
+    [model]
   gpm-proto/GPM
 
   (logpdf [this targets constraints inputs]
-    (let [target-addrs-vals            (mmix/with-row-values {} targets)
-          constraint-addrs-vals        (mmix/with-row-values {} constraints)
+    (let [constraint-addrs-vals        (mmix/with-row-values {} constraints)
           target-constraint-addrs-vals (mmix/with-row-values {}
                                          (merge targets
                                                 constraints))
           row-generator                (optimized-row-generator model)
 
           ;; Run infer to obtain probabilities.
-          [retval trace log-weight-numer] (mp/infer-and-score
-                                           :procedure row-generator
-                                           :observation-trace target-constraint-addrs-vals)
+          [_ _ log-weight-numer] (mp/infer-and-score
+                                  :procedure row-generator
+                                  :observation-trace target-constraint-addrs-vals)
           log-weight-denom (if (empty? constraint-addrs-vals)
                              ;; There are no constraints: log weight is zero.
                              0
                              ;; There are constraints: find marginal probability of constraints.
-                             (let [[retval trace weight] (mp/infer-and-score
-                                                          :procedure row-generator
-                                                          :observation-trace constraint-addrs-vals)]
+                             (let [[_ _ weight] (mp/infer-and-score
+                                                 :procedure row-generator
+                                                 :observation-trace constraint-addrs-vals)]
                                weight))]
       (- log-weight-numer log-weight-denom)))
 

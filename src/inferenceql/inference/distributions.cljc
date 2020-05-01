@@ -1,7 +1,8 @@
 (ns inferenceql.inference.distributions
   (:require [clojure.spec.alpha :as s]
+            [metaprob.distributions]
             [metaprob.prelude :as mp]
-            #?(:clj [incanter.distributions :as distributions])
+            #?(:clj [incanter.distributions :as incanter.distributions])
             [inferenceql.inference.multimixture.specification :as spec]))
 
 ;; https://rosettacode.org/wiki/Gamma_function#Clojure
@@ -116,8 +117,8 @@
 ;; TODO: Remove. This is Metaprob's implementation, inlined.
 #?(:clj (defn mp-beta-scorer
           [x [alpha beta]]
-          (mp/log (distributions/pdf
-                   (distributions/beta-distribution alpha beta)
+          (mp/log (incanter.distributions/pdf
+                   (incanter.distributions/beta-distribution alpha beta)
                    x))))
 
 (comment

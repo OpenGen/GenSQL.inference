@@ -24,19 +24,18 @@
                                that `cluster-component` generated `row`."
   [spec rows]
   (map-indexed (fn [view-idx view]
-                 (let [view (get-in spec [:views view-idx])]
                  ;; For each cluster in a view, for each row in cluster, determine the
                  ;; probability that a cluster generated a row.
-                   (->> view
-                        (map-indexed (fn [cluster-idx _]
-                                       (map #(cluster-row-probability
-                                              spec
-                                              cluster-idx
-                                              view-idx
-                                              %) rows)))
+                 (->> view
+                      (map-indexed (fn [cluster-idx _]
+                                     (map #(cluster-row-probability
+                                            spec
+                                            cluster-idx
+                                            view-idx
+                                            %) rows)))
                       ;; Group probabilities by row, rather than by cluster.
-                        (mmix-utils/transpose)
-                        (map normalize-row-probability))))
+                      (mmix-utils/transpose)
+                      (map normalize-row-probability)))
                (get spec :views)))
 
 (defn generate-cluster-row-probability-table
