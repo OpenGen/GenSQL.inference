@@ -7,6 +7,11 @@
   [model]
   (->Multimixture model))
 
+(defn gpm?
+  "Returns `true` if `x` is a generative probabilistic model."
+  [x]
+  (satisfies? gpm-proto/GPM x))
+
 (defn logpdf
   "Given a GPM, calculates the logpdf of `targets` given `constraints`
   and optionally, `inputs`."
