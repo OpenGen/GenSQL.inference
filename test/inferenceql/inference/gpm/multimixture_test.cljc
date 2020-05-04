@@ -1,4 +1,4 @@
-(ns inferenceql.inference.multimixture.basic-queries-test
+(ns inferenceql.inference.gpm.multimixture-test
   (:require [clojure.spec.alpha :as s]
             [clojure.test :as test :refer [deftest testing is]]
             [clojure.walk :as walk :refer [stringify-keys]]
