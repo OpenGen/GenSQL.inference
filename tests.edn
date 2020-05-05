@@ -4,6 +4,6 @@
           :test-paths ["test"]}
          {:id :cljs
           :type :kaocha.type/cljs
-          :cljs/timeout 20000
+          :cljs/timeout 30000
           :source-paths ["src"]
           :test-paths ["test"]}]}
