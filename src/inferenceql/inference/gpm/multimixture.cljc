@@ -61,21 +61,25 @@
   (simulate [this targets constraints n-samples inputs]
     (let [constraint-addrs-vals (mmix/with-row-values {} constraints)
           generative-model      (optimized-row-generator model)
-          gen-fn                #(first (mp/infer-and-score :procedure generative-model
-                                                            :observation-trace constraint-addrs-vals))]
+          gen-fn                #(let [[sample _ _] (mp/infer-and-score :procedure generative-model
+                                                                        :observation-trace constraint-addrs-vals)]
+                                   (select-keys sample targets))]
       (take n-samples (repeatedly gen-fn))))
 
   (mutual-information [this target-a target-b constraints n-samples]
-    (let [samples         (gpm-proto/simulate
-                           this
-                           (merge target-a target-b)
-                           constraints
-                           n-samples
-                           {})
-          joint-target    (concat target-a target-b)
-          constraint      (if (map? constraints)
-                            (repeat n-samples constraints)
-                            (map #(select-keys % constraints) samples))
+    (let [joint-target (into target-a target-b)
+          samples (gpm-proto/simulate
+                   this
+                   (cond-> joint-target
+                     (vector? constraints)
+                     (into constraints))
+                   constraints
+                   n-samples
+                   {})
+          constraint (if (map? constraints)
+                       (repeat n-samples constraints)
+                       (map #(select-keys % constraints)
+                            samples))
           logpdf-estimate (fn [target]
                             (utils/average (map-indexed (fn [i sample]
                                                           (gpm-proto/logpdf

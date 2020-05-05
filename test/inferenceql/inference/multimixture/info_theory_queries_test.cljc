@@ -63,9 +63,10 @@
 #?(:clj (deftest simulate-from-MI-model
           ;; Plots can be generated with `make plots`.
          (testing "(smoke) simulate n complete rows and save them as vl-json"
-           (let [samples (gpm/simulate
+           (let [all-variables (keys (:vars multi-mixture))
+                 samples (gpm/simulate
                           gpm-mmix
-                          {}
+                          all-variables
                           {}
                           sampled-points-for-plot)]
              (utils/save-json "simulations-for-mi-x-y"

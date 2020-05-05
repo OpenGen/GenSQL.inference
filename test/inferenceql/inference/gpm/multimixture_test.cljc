@@ -176,10 +176,10 @@
   (is (map? (row-generator))))
 
 (deftest test-smoke-simulate
-  (is (= 3 (count (gpm/simulate gpm-mmix {} {} 3)))))
+  (is (= 3 (count (gpm/simulate gpm-mmix ["x"] {} 3)))))
 
 (deftest test-smoke-simulate-conditional
-  (is (= 999. (get (first (gpm/simulate gpm-mmix {} {"x" 999.} 3))
+  (is (= 999. (get (first (gpm/simulate gpm-mmix ["x"] {"x" 999.} 3))
                    "x"))))
 
 (deftest test-smoke-logpdf
@@ -232,8 +232,9 @@
     (testing (str "Conditioned on  deterministic category" cluster)
       ;; We simulate all variables together in a single test like this because
       ;; there's currently a performance benefit to doing so.
-      (let [point   (test-point point-id)
-            samples (gpm/simulate gpm-mmix {} {"a" (str cluster)} simulation-count)]
+      (let [point (test-point point-id)
+            all-variables (keys (:vars multi-mixture))
+            samples (gpm/simulate gpm-mmix all-variables {"a" (str cluster)} simulation-count)]
         (doseq [variable variables]
           (cond (spec/numerical? multi-mixture variable)
                 (let [samples (utils/col variable samples)]
@@ -246,9 +247,9 @@
                                                  (/ sigma 2))))
                       (testing "standard deviation"
                         (is (utils/within-factor?
-                              sigma
-                              (utils/std samples)
-                              2)))))
+                             sigma
+                             (utils/std samples)
+                             2)))))
                   (spec/nominal? multi-mixture variable))))))))
 
 (defn- true-categorical-p
@@ -267,8 +268,9 @@
   ;; from the right clusters.
   (doseq [point-id (vals cluster-point-mapping)]
     (testing (str "Conditioned on point P" point-id)
-      (let [point   (stringify-keys (test-point point-id))
-            samples (gpm/simulate gpm-mmix {} point simulation-count)]
+      (let [point (stringify-keys (test-point point-id))
+            all-variables (keys (:vars multi-mixture))
+            samples (gpm/simulate gpm-mmix all-variables point simulation-count)]
         (testing "validate cluster assignments/categorical distribution"
           (let [samples-a          (utils/column-subset samples ["a"])
                 cluster-p-fraction (utils/probability-for-categories samples-a (map str (range 6)))
@@ -368,3 +370,14 @@
                                        {"a" category}
                                        point))]
           (is (almost-equal-p? analytical-pdf queried-pdf)))))))
+
+(deftest simulate-targets
+  (let [variables #{:x}
+        model (gpm/Multimixture
+               {:vars {:x :gaussian
+                       :y :gaussian}
+                :views [[{:probability 1.0
+                          :parameters {:x {:mu 0 :sigma 1}
+                                       :y {:mu 5 :sigma 2}}}]]})]
+    (doseq [sample (gpm/simulate model variables {} 10)]
+      (is (= variables (set (keys sample)))))))
