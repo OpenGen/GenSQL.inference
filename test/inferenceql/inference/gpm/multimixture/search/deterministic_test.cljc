@@ -1,6 +1,6 @@
-(ns inferenceql.inference.multimixture.search.deterministic-test
+(ns inferenceql.inference.gpm.multimixture.search.deterministic-test
   (:require [clojure.test :as test :refer [deftest is]]
-            [inferenceql.inference.multimixture.search.deterministic :as deterministic]))
+            [inferenceql.inference.gpm.multimixture.search.deterministic :as deterministic]))
 
 (def two-gaussian-no-observations-spec
   {:vars {"x" :gaussian}

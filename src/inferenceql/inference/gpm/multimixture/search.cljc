@@ -1,13 +1,13 @@
-(ns inferenceql.inference.multimixture.search
+(ns inferenceql.inference.gpm.multimixture.search
   (:require [clojure.spec.alpha :as s]
             [metaprob.distributions :as dist]
             [metaprob.generative-functions :as g :refer [at gen]]
             [metaprob.prelude :as mp]
             [inferenceql.inference.distributions :as idbdist]
-            [inferenceql.inference.multimixture :as mmix]
-            [inferenceql.inference.multimixture.utils :as mmix-utils]
+            [inferenceql.inference.gpm.multimixture.multimixture :as mmix]
+            [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
             [inferenceql.inference.gpm :as gpm]
-            [inferenceql.inference.multimixture.specification :as spec]))
+            [inferenceql.inference.gpm.multimixture.specification :as spec]))
 
 (s/fdef optimized-row-generator
   :args (s/cat :spec ::spec/multi-mixture))

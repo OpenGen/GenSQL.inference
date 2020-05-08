@@ -1,6 +1,6 @@
-(ns inferenceql.inference.multimixture.metrics-viz
+(ns inferenceql.inference.gpm.multimixture.metrics-viz
   (:require [clojure.string :refer [split]]
-            [inferenceql.inference.multimixture.metrics :as metrics]
+            [inferenceql.inference.gpm.multimixture.metrics :as metrics]
             [zane.vega.repl :refer [vega]]))
 
 (defmacro with-out-str-data-time-map

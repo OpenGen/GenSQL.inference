@@ -1,4 +1,4 @@
-(ns inferenceql.inference.multimixture.utils)
+(ns inferenceql.inference.gpm.multimixture.utils)
 
 (defn prun
   "Runs `n` parallel calls to function `f`, that is assumed to have

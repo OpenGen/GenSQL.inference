@@ -1,11 +1,11 @@
-(ns inferenceql.inference.multimixture
+(ns inferenceql.inference.gpm.multimixture.multimixture
   #?(:cljs (:require-macros [metaprob.generative-functions :refer [gen]]))
   (:require [clojure.math.combinatorics :as combo]
             [clojure.spec.alpha :as s]
             #?(:clj [metaprob.generative-functions :refer [apply-at at gen]]
                :cljs [metaprob.generative-functions :refer [apply-at at]])
             [metaprob.distributions :as dist]
-            [inferenceql.inference.multimixture.specification :as spec]))
+            [inferenceql.inference.gpm.multimixture.specification :as spec]))
 
 (defn row-generator
   "Returns a generative function that samples a row from the provided view

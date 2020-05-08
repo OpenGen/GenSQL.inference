@@ -1,5 +1,5 @@
-(ns inferenceql.inference.multimixture.metrics
-  (:require [inferenceql.inference.multimixture :as mmix]))
+(ns inferenceql.inference.gpm.multimixture.metrics
+  (:require [inferenceql.inference.gpm.multimixture.multimixture :as mmix]))
 
 (defn check-distribution-criteria
   "Checks basic assumptions about two distributions being compared.

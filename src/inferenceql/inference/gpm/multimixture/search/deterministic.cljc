@@ -1,6 +1,6 @@
-(ns inferenceql.inference.multimixture.search.deterministic
-  (:require [inferenceql.inference.multimixture.utils :as mmix-utils]
-            [inferenceql.inference.multimixture.search.utils :as search-utils]))
+(ns inferenceql.inference.gpm.multimixture.search.deterministic
+  (:require [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
+            [inferenceql.inference.gpm.multimixture.search.utils :as search-utils]))
 
 #?(:cljs (enable-console-print!))
 

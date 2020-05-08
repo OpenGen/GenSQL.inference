@@ -1,4 +1,4 @@
-(ns inferenceql.inference.multimixture.specification
+(ns inferenceql.inference.gpm.multimixture.specification
   (:require [clojure.spec.alpha :as s]))
 
 (s/def ::alpha pos?)

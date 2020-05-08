@@ -1,7 +1,7 @@
-(ns inferenceql.inference.multimixture.search.enumerative
+(ns inferenceql.inference.gpm.multimixture.search.enumerative
   (:require [clojure.math.combinatorics :as combo]
-            [inferenceql.inference.multimixture.utils :as mmix-utils]
-            [inferenceql.inference.multimixture.search.utils :as utils]))
+            [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
+            [inferenceql.inference.gpm.multimixture.search.utils :as utils]))
 
 (defn rows->all-cluster-configurations
   "Returns a (lazy) sequence of all possible cluster configurations for rows."

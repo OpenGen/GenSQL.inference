@@ -1,7 +1,7 @@
-(ns inferenceql.inference.multimixture.search.enumerative-search-test
+(ns inferenceql.inference.gpm.multimixture.search.enumerative-search-test
   "Enumerative tests."
   (:require [clojure.test :as test :refer [deftest is]]
-            [inferenceql.inference.multimixture.search.enumerative :as enumerative]))
+            [inferenceql.inference.gpm.multimixture.search.enumerative :as enumerative]))
 
 ;; Checks that all configurations are returned for a specified number of rows
 ;; and clusters.

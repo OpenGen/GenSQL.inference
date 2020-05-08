@@ -2,7 +2,7 @@
   (:require [metaprob.distributions :as dist]
             [metaprob.prelude :as mp]
             [metaprob.generative-functions :as g :refer [gen]]
-            [inferenceql.inference.multimixture :as mmix]
+            [inferenceql.inference.gpm.multimixture.multimixture :as mmix]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm.proto :as gpm-proto]))
 

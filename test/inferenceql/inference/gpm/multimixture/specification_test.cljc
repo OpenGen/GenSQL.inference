@@ -1,8 +1,8 @@
-(ns inferenceql.inference.multimixture.specification-test
+(ns inferenceql.inference.gpm.multimixture.specification-test
   (:require [clojure.spec.alpha :as s]
             [clojure.test :as test :refer [deftest testing is]]
             [expound.alpha :as expound]
-            [inferenceql.inference.multimixture.specification :as spec]))
+            [inferenceql.inference.gpm.multimixture.specification :as spec]))
 
 (def mmix
   {:vars {"x" :gaussian

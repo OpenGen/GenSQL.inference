@@ -6,8 +6,8 @@
             [expound.alpha :as expound]
             #?(:clj [inferenceql.inference.plotting.generate-vljson :as plot])
             [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.multimixture.specification :as spec]
-            [inferenceql.inference.multimixture.search :as search] ;; XXX: why is the "optimized" row generator in search?
+            [inferenceql.inference.gpm.multimixture.specification :as spec]
+            [inferenceql.inference.gpm.multimixture.search :as search] ;; XXX: why is the "optimized" row generator in search?
             [inferenceql.inference.gpm :as gpm]
             [metaprob.distributions :as dist]))
 

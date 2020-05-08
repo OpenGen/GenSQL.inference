@@ -1,6 +1,6 @@
-(ns inferenceql.inference.multimixture.search.gibbs
+(ns inferenceql.inference.gpm.multimixture.search.gibbs
   (:require [metaprob.distributions :as dist]
-            [inferenceql.inference.multimixture.search.utils :as utils]))
+            [inferenceql.inference.gpm.multimixture.search.utils :as utils]))
 
 (defn sample-cluster-assignments
   "Given a probability table for rows, samples cluster assignments. A valid

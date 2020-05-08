@@ -1,8 +1,8 @@
-(ns inferenceql.inference.multimixture.search.gibbs-search-test
+(ns inferenceql.inference.gpm.multimixture.search.gibbs-search-test
   "Gibbs sampling tests."
   (:require [clojure.test :as test :refer [deftest is]]
-            [inferenceql.inference.multimixture.utils :as mmix-utils]
-            [inferenceql.inference.multimixture.search.gibbs :as gibbs]))
+            [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
+            [inferenceql.inference.gpm.multimixture.search.gibbs :as gibbs]))
 
 ;; Checks that sampled values of clusters are within reason.
 (deftest sample-cluster-assignments

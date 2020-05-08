@@ -1,8 +1,8 @@
-(ns inferenceql.inference.multimixture-test
+(ns inferenceql.inference.gpm.multimixture.multimixture-test
   (:require [clojure.test :as test :refer [deftest is]]
             [metaprob.prelude :as mp]
-            [inferenceql.inference.multimixture :as mmix]
-            [inferenceql.inference.multimixture.search :as search]))
+            [inferenceql.inference.gpm.multimixture.multimixture :as mmix]
+            [inferenceql.inference.gpm.multimixture.search :as search]))
 
 (deftest generator-parity
   (let [spec {:vars {"x" :gaussian

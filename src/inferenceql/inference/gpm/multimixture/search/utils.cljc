@@ -1,6 +1,6 @@
-(ns inferenceql.inference.multimixture.search.utils
-  (:require [inferenceql.inference.multimixture :as mmix]
-            [inferenceql.inference.multimixture.utils :as mmix-utils]
+(ns inferenceql.inference.gpm.multimixture.search.utils
+  (:require [inferenceql.inference.gpm.multimixture.multimixture :as mmix]
+            [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
             [metaprob.prelude :as mp]))
 
 (defn normalize-row-probability

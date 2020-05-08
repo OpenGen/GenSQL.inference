@@ -1,9 +1,9 @@
-(ns inferenceql.inference.multimixture.info-theory-queries-test
+(ns inferenceql.inference.gpm.multimixture.info-theory-queries-test
   (:require #?(:clj [clojure.test :as test :refer [deftest testing is]]
                :cljs [clojure.test :as test :refer [deftest is]])
             [inferenceql.inference.utils :as utils]
             #?(:clj [inferenceql.inference.plotting.generate-vljson :as plot])
-            [inferenceql.inference.multimixture.search :as search]
+            [inferenceql.inference.gpm.multimixture.search :as search]
             [inferenceql.inference.gpm :as gpm]))
 
 (def multi-mixture

@@ -3,7 +3,7 @@
             [metaprob.distributions]
             [metaprob.prelude :as mp]
             #?(:clj [incanter.distributions :as incanter.distributions])
-            [inferenceql.inference.multimixture.specification :as spec]))
+            [inferenceql.inference.gpm.multimixture.specification :as spec]))
 
 ;; https://rosettacode.org/wiki/Gamma_function#Clojure
 (s/fdef gamma
