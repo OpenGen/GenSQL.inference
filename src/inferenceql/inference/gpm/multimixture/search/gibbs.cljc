@@ -1,6 +1,6 @@
 (ns inferenceql.inference.gpm.multimixture.search.gibbs
   (:require [metaprob.distributions :as dist]
-            [inferenceql.inference.gpm.multimixture.search.utils :as utils]))
+            [inferenceql.inference.gpm.multimixture.search.utils :as search.utils]))
 
 (defn sample-cluster-assignments
   "Given a probability table for rows, samples cluster assignments. A valid
@@ -43,7 +43,7 @@
   ([spec new-column-key known-rows unknown-rows beta-params]
     (search spec new-column-key known-rows unknown-rows beta-params 1000))
   ([spec new-column-key known-rows unknown-rows beta-params iters]
-   (let [[known-probs unknown-probs] (utils/generate-cluster-row-probability-table
+   (let [[known-probs unknown-probs] (search.utils/generate-cluster-row-probability-table
                                       spec
                                       known-rows
                                       unknown-rows)

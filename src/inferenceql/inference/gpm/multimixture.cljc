@@ -1,6 +1,6 @@
 (ns inferenceql.inference.gpm.multimixture
   (:require [metaprob.prelude :as mp]
-            [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
+            [inferenceql.inference.gpm.multimixture.utils :as mmix.utils]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm.proto :as gpm-proto]))
 
@@ -10,11 +10,11 @@
   gpm-proto/GPM
 
   (logpdf [this targets constraints inputs]
-    (let [constraint-addrs-vals        (mmix-utils/with-row-values {} constraints)
-          target-constraint-addrs-vals (mmix-utils/with-row-values {}
+    (let [constraint-addrs-vals        (mmix.utils/with-row-values {} constraints)
+          target-constraint-addrs-vals (mmix.utils/with-row-values {}
                                          (merge targets
                                                 constraints))
-          row-generator                (mmix-utils/optimized-row-generator model)
+          row-generator                (mmix.utils/optimized-row-generator model)
 
           ;; Run infer to obtain probabilities.
           [_ _ log-weight-numer] (mp/infer-and-score
@@ -31,8 +31,8 @@
       (- log-weight-numer log-weight-denom)))
 
   (simulate [this targets constraints n-samples inputs]
-    (let [constraint-addrs-vals (mmix-utils/with-row-values {} constraints)
-          generative-model      (mmix-utils/optimized-row-generator model)
+    (let [constraint-addrs-vals (mmix.utils/with-row-values {} constraints)
+          generative-model      (mmix.utils/optimized-row-generator model)
           gen-fn                #(let [[sample _ _] (mp/infer-and-score :procedure generative-model
                                                                         :observation-trace constraint-addrs-vals)]
                                    (select-keys sample targets))]

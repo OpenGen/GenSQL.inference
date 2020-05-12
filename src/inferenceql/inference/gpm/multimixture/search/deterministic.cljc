@@ -1,6 +1,6 @@
 (ns inferenceql.inference.gpm.multimixture.search.deterministic
-  (:require [inferenceql.inference.gpm.multimixture.search.utils :as search-utils]
-            [inferenceql.inference.utils :as utils]))
+  (:require [inferenceql.inference.utils :as utils]
+            [inferenceql.inference.gpm.multimixture.search.utils :as search.utils]))
 
 #?(:cljs (enable-console-print!))
 
@@ -29,7 +29,7 @@
 (defn search
   "Mimicks the behavior of search, but without sampling!"
   [spec new-column-key known-rows unknown-rows beta-params]
-  (let [[known-probs unknown-probs] (search-utils/generate-cluster-row-probability-table spec known-rows unknown-rows)
+  (let [[known-probs unknown-probs] (search.utils/generate-cluster-row-probability-table spec known-rows unknown-rows)
         num-clusters               (count (get-in spec [:views 0]))
         beta-primes                (map #(update-beta-params
                                           beta-params

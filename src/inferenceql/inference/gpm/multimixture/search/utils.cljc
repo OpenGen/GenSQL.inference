@@ -1,5 +1,5 @@
 (ns inferenceql.inference.gpm.multimixture.search.utils
-  (:require [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
+  (:require [inferenceql.inference.gpm.multimixture.utils :as mmix.utils]
             [inferenceql.inference.utils :as utils]
             [metaprob.prelude :as mp]))
 
@@ -15,8 +15,8 @@
    ;; Prior probability * likelihood that cluster generated row, given the row and spec.
   (let [cluster (get-in spec [:views view-idx cluster-idx])]
     (* (:probability cluster)
-       (mp/exp (last (mp/infer-and-score :procedure (mmix-utils/cluster-row-generator cluster (get spec :vars))
-                                         :observation-trace (mmix-utils/with-row-values {} row)))))))
+       (mp/exp (last (mp/infer-and-score :procedure (mmix.utils/cluster-row-generator cluster (get spec :vars))
+                                         :observation-trace (mmix.utils/with-row-values {} row)))))))
 
 (defn view-row-probabilities
   "Returns a probability table P, where
