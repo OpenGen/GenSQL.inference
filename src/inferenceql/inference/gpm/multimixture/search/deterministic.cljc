@@ -1,6 +1,6 @@
 (ns inferenceql.inference.gpm.multimixture.search.deterministic
-  (:require [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
-            [inferenceql.inference.gpm.multimixture.search.utils :as search-utils]))
+  (:require [inferenceql.inference.gpm.multimixture.search.utils :as search-utils]
+            [inferenceql.inference.utils :as utils]))
 
 #?(:cljs (enable-console-print!))
 
@@ -18,7 +18,7 @@
                                   ;; Ignore indices and group by cluster, not row, to compute
                                   ;; the necessary sum.
                                  (map #(first %))
-                                 (mmix-utils/transpose)
+                                 (utils/transpose)
                                  (map #(apply + %))
                                  (map (fn [param-instance]
                                         {param (+ (param beta-params) param-instance)})))))

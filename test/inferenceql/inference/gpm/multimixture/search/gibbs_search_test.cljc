@@ -1,7 +1,7 @@
 (ns inferenceql.inference.gpm.multimixture.search.gibbs-search-test
   "Gibbs sampling tests."
   (:require [clojure.test :as test :refer [deftest is]]
-            [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
+            [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm.multimixture.search.gibbs :as gibbs]))
 
 ;; Checks that sampled values of clusters are within reason.
@@ -12,7 +12,7 @@
         total-el   (* n-clusters (count probs))
         sampled    (->> (fn [] (gibbs/sample-cluster-assignments probs))
                         (repeatedly 1000)
-                        (mmix-utils/transpose)
+                        (utils/transpose)
                         (mapv #(->> (frequencies %)
                                     (into (sorted-map))
                                     (mapv second)))

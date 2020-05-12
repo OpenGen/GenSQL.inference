@@ -1,7 +1,7 @@
 (ns inferenceql.inference.gpm.multimixture.search.enumerative
   (:require [clojure.math.combinatorics :as combo]
-            [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]
-            [inferenceql.inference.gpm.multimixture.search.utils :as utils]))
+            [inferenceql.inference.utils :as utils]
+            [inferenceql.inference.gpm.multimixture.search.utils :as search-utils]))
 
 (defn rows->all-cluster-configurations
   "Returns a (lazy) sequence of all possible cluster configurations for rows."
@@ -52,7 +52,7 @@
   "Mimicks the behavior of search, but without sampling, and it's enumerative!
   Assumes one view in the specification."
   [spec new-column-key known-rows unknown-rows beta-params]
-  (let [[known-probs unknown-probs] (utils/generate-cluster-row-probability-table spec known-rows unknown-rows)
+  (let [[known-probs unknown-probs] (search-utils/generate-cluster-row-probability-table spec known-rows unknown-rows)
         num-clusters                (count (get-in spec [:views 0]))
         known-probs-single-view     (vec (nth   known-probs 0)) ;; hard coded for one view.
         unknown-probs-single-view   (vec (nth unknown-probs 0)) ;; hard coded for one view.
@@ -62,7 +62,7 @@
                                           known-probs-single-view
                                           known-labels
                                           beta-params)
-                                         (mmix-utils/transpose)
+                                         (utils/transpose)
                                          (map #(apply + %)))]
     (map-indexed (fn [row _]
                    ;; Get prediction by multiplying likelihood of cluster by coin weight.

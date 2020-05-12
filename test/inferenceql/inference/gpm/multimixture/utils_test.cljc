@@ -1,8 +1,7 @@
-(ns inferenceql.inference.gpm.multimixture.multimixture-test
+(ns inferenceql.inference.gpm.multimixture.utils-test
   (:require [clojure.test :as test :refer [deftest is]]
             [metaprob.prelude :as mp]
-            [inferenceql.inference.gpm.multimixture.multimixture :as mmix]
-            [inferenceql.inference.gpm.multimixture.search :as search]))
+            [inferenceql.inference.gpm.multimixture.utils :as mmix-utils]))
 
 (deftest generator-parity
   (let [spec {:vars {"x" :gaussian
@@ -18,8 +17,8 @@
                        {:probability 0.6
                         :parameters {"a" {:mu 6 :sigma 7}
                                      "b" {"0" 0.99 "1" 0.001 "2" 0.002 "3" 0.003 "4" 0.004}}}]]}
-        generator (mmix/row-generator spec)
-        optimized-generator (search/optimized-row-generator spec)
+        generator (mmix-utils/row-generator spec)
+        optimized-generator (mmix-utils/optimized-row-generator spec)
         [_ trace _] (mp/infer-and-score :procedure generator)
         [row0 _ _] (mp/infer-and-score :procedure generator :observation-trace trace)
         [row1 _ _] (mp/infer-and-score :procedure optimized-generator :observation-trace trace)]
