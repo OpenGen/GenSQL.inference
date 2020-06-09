@@ -9,7 +9,7 @@
     [model]
   gpm-proto/GPM
 
-  (logpdf [this targets constraints inputs]
+  (logpdf [this targets constraints]
     (let [constraint-addrs-vals        (mmix.utils/with-row-values {} constraints)
           target-constraint-addrs-vals (mmix.utils/with-row-values {}
                                          (merge targets
@@ -30,7 +30,7 @@
                                weight))]
       (- log-weight-numer log-weight-denom)))
 
-  (simulate [this targets constraints n-samples inputs]
+  (simulate [this targets constraints n-samples]
     (let [constraint-addrs-vals (mmix.utils/with-row-values {} constraints)
           generative-model      (mmix.utils/optimized-row-generator model)
           gen-fn                #(let [[sample _ _] (mp/infer-and-score :procedure generative-model
@@ -46,8 +46,7 @@
                      (vector? constraints)
                      (into constraints))
                    constraints
-                   n-samples
-                   {})
+                   n-samples)
           constraint (if (map? constraints)
                        (repeat n-samples constraints)
                        (map #(select-keys % constraints)
@@ -57,8 +56,7 @@
                                                           (gpm-proto/logpdf
                                                            this
                                                            (select-keys sample target)
-                                                           (nth constraint i)
-                                                           {}))
+                                                           (nth constraint i)))
                                                         samples)))
           ;; TODO: will we get perf improvements if the run one map for all of the below?
           logpdf-a  (logpdf-estimate target-a)

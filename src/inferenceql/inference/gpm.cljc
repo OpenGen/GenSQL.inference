@@ -13,12 +13,9 @@
   (satisfies? gpm-proto/GPM x))
 
 (defn logpdf
-  "Given a GPM, calculates the logpdf of `targets` given `constraints`
-  and optionally, `inputs`."
-  ([gpm targets constraints]
-   (logpdf gpm targets constraints {}))
-  ([gpm targets constraints inputs]
-   (gpm-proto/logpdf gpm targets constraints inputs)))
+  "Given a GPM, calculates the logpdf of `targets` given `constraints`."
+  [gpm targets constraints]
+  (gpm-proto/logpdf gpm targets constraints))
 
 (defn mutual-information
   "Given a GPM, estimates the mutual-information of `target-a` and `target-b`
@@ -28,8 +25,6 @@
 
 (defn simulate
   "Given a GPM, simulates `n-samples` samples of the variables in `targets`,
-  given `constraints` and optionally, `inputs`."
-  ([gpm targets constraints n-samples]
-   (simulate gpm targets constraints n-samples {}))
-  ([gpm targets constraints n-samples inputs]
-   (gpm-proto/simulate gpm targets constraints n-samples inputs)))
+  given `constraints`."
+  [gpm targets constraints n-samples]
+  (gpm-proto/simulate gpm targets constraints n-samples))
