@@ -1,6 +1,20 @@
 (ns inferenceql.inference.gpm
   (:require [inferenceql.inference.gpm.multimixture :refer [->Multimixture]]
+            #?(:clj [inferenceql.inference.gpm.http :as http])
             [inferenceql.inference.gpm.proto :as gpm-proto]))
+
+#?(:clj
+   (defn http
+     "Returns a generative probabilistic model (GPM) that computes results by
+  forwarding requests over HTTP. `url` should include the URL scheme and
+  authority. Functions that operate on GPMs will trigger HTTP requests to an
+  endpoint at `url` with function name as the path. For example, if `url` is
+  `http://localhost`, calling `logpdf` will trigger a request to
+  `http://localhost/logpdf`. Arguments will be included as JSON in the request
+  body as a single JSON object with the argument names being used as keys.
+  Responses will be read as JSON with the keys being coerced to keywords."
+     [url]
+     (http/->HTTP url)))
 
 (defn Multimixture
   "Wrapper to provide conversion to Multimixture model."

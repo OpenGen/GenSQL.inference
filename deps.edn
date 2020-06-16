@@ -1,4 +1,6 @@
-{:deps {org.clojure/clojurescript {:mvn/version "1.10.520"}
+{:deps {clj-http {:mvn/version "3.10.1"}
+        metosin/jsonista {:mvn/version "0.2.6"}
+        org.clojure/clojurescript {:mvn/version "1.10.520"}
         probcomp/metaprob {:git/url "https://github.com/probcomp/metaprob.git"
                            :sha "8dc9d09f747c1e29886bb9628a0110c6f6bc6f5a"}}
  :aliases {:test {:extra-paths ["test"]
