@@ -5,7 +5,7 @@
 
 #?(:clj
    (defn http
-     "Returns a generative probabilistic model (GPM) that computes results by
+     "Returns a generative population model (GPM) that computes results by
   forwarding requests over HTTP. `url` should include the URL scheme and
   authority. Functions that operate on GPMs will trigger HTTP requests to an
   endpoint at `url` with function name as the path. For example, if `url` is
@@ -22,7 +22,7 @@
   (->Multimixture model))
 
 (defn gpm?
-  "Returns `true` if `x` is a generative probabilistic model."
+  "Returns `true` if `x` is a generative population model."
   [x]
   (satisfies? gpm-proto/GPM x))
 
