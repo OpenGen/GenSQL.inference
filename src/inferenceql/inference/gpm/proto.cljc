@@ -12,3 +12,9 @@
   (unincorporate [this values] "Removes the specified values from the given GPM.
                                It is the client's responsibility to avoid unincorporating
                                values that were not previously incorporated."))
+
+(defprotocol Score
+  "Calculates the marginal log joint density of all observations and current variable configuration
+  of the current state of a GPM.
+  Necessary for all CrossCat-related GPMs."
+  (logpdf-score [this]))
