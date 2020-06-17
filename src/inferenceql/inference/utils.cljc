@@ -114,3 +114,22 @@
   `coll` is an object capable of having a transpose."
   [coll]
   (apply map vector coll))
+
+(defn logsumexp
+  "Log-sum-exp operation for summing log probabilities without
+  leaving the log domain."
+  [log-ps]
+  (if (= 1 (count log-ps))
+    (first log-ps)
+    (let [log-ps-sorted (sort > log-ps)
+          a0 (first log-ps-sorted)
+          tail (drop 1 log-ps-sorted)
+          res (+ a0 (Math/log
+                      (inc (reduce + (map #(Math/exp (- % a0))
+                                          tail)))))]
+      #?(:clj (if (Double/isNaN res) ; A zero-probability event has occurred.
+                  ##-Inf
+                  res)
+         :cljs (if (js/isNaN res)
+                 ##-Inf
+                 res)))))
