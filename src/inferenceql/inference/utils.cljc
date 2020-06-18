@@ -133,3 +133,19 @@
          :cljs (if (js/isNaN res)
                  ##-Inf
                  res)))))
+
+(defn linspace
+  "Generates a sequence of `n` numbers, linearly (evenly) spaced between `start` and `end`,
+  the latter of which is exclusive."
+  [start end n]
+  (range start end (/ (- end start) n)))
+
+(defn log-linspace
+  "Generates a sequence of `n` numbers, spaced between `start` and `end` on a logarithmic scale,
+  where `end` is excluded from the range."
+  [start end n]
+  (if (= start end)
+    `(~start)
+    (->> (linspace (Math/log start) (Math/log end) n)
+         (map #(Math/exp %))
+         (take n))))
