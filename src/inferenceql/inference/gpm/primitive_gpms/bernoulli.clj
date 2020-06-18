@@ -3,7 +3,7 @@
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.primitives :as primitives]))
 
-(defrecord Bernoulli [var-name parameters suff-stats hyperparameters]
+(defrecord Bernoulli [var-name suff-stats hyperparameters]
   gpm.proto/GPM
   (logpdf [this targets constraints]
     (let [x-sum (get suff-stats :x-sum)
@@ -64,9 +64,7 @@
   "Casts a CrossCat category spec to a Bernoulli variable."
   ([var-name]
    (spec->bernoulli var-name {:p 0.5} {:n 0 :x-sum 0}))
-  ([var-name parameters]
-   (spec->bernoulli var-name parameters {:n 0 :x-sum 0}))
-  ([var-name parameters suff-stats]
-   (spec->bernoulli var-name parameters suff-stats {:alpha 0.5 :beta 0.5}))
-  ([var-name parameters suff-stats hyperparameters]
-   (->Bernoulli var-name parameters suff-stats hyperparameters)))
+  ([var-name suff-stats]
+   (spec->bernoulli var-name suff-stats {:alpha 0.5 :beta 0.5}))
+  ([var-name suff-stats hyperparameters]
+   (->Bernoulli var-name suff-stats hyperparameters)))

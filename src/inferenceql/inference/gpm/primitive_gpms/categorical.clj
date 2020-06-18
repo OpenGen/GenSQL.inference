@@ -3,7 +3,7 @@
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.primitives :as primitives]))
 
-(defrecord Categorical [var-name parameters suff-stats hyperparameters]
+(defrecord Categorical [var-name suff-stats hyperparameters]
   gpm.proto/GPM
   (logpdf [this targets constraints]
     (let [x (get targets var-name)
@@ -19,7 +19,7 @@
                                         (reduce + (vals counts))))]
                 (- numer denom)))))
   (simulate [this targets constraints n-samples]
-    (let [p (->> (keys (:p parameters))
+    (let [p (->> (keys (:counts suff-stats))
                  (reduce (fn [m k]
                            (assoc m k (gpm.proto/logpdf this {var-name k} {})))
                          {})
@@ -70,12 +70,10 @@
 
 (defn spec->categorical
   "Casts a CrossCat category spec to a Categorical variable."
-  ([var-name parameters]
-   (let [probs   (:p parameters)
-         options (keys probs)
-         counts  (repeat (count options) 0)]
-     (spec->categorical var-name parameters {:n 0 :counts (zipmap options counts)} {:alpha 1})))
-  ([var-name parameters suff-stats]
-   (spec->categorical var-name parameters suff-stats {:alpha 1}))
-  ([var-name parameters suff-stats hyperparameters]
-   (->Categorical var-name parameters suff-stats hyperparameters)))
+  ([var-name options-or-suff-stats]
+   (if (or (list? options-or-suff-stats) (vector? options-or-suff-stats))
+      (spec->categorical var-name {:n 0 :counts (zipmap options-or-suff-stats (repeat 0))} {:alpha 1})
+      ;; Otherwise, the argument represents the sufficient statistics.
+      (spec->categorical var-name options-or-suff-stats {:alpha 1})))
+  ([var-name suff-stats hyperparameters]
+   (->Categorical var-name suff-stats hyperparameters)))

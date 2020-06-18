@@ -6,9 +6,8 @@
 
 (def categorical-pgpm
   (let [var-name "categorical"
-        parameters {:p {"a" 0.4 "b" 0.5 "c" 0.1}}
         suff-stats {:n 0 :counts {"a" 0 "b" 0 "c" 0}}]
-    (categorical/spec->categorical var-name parameters suff-stats)))
+    (categorical/spec->categorical var-name suff-stats)))
 
 (deftest logpdf
   (let [targets {"categorical" "a"}
@@ -24,13 +23,12 @@
         targets []
         constraints {}
         samples (frequencies (gpm.proto/simulate categorical-pgpm targets constraints n))]
-    (mapv (fn [k]
-           (is (< (utils/abs (- (/ (get samples k) n)
-                                (/ 1 3)))
-                  error-margin)))
-          (-> categorical-pgpm
-              (get-in [:parameters :p])
-              (keys)))))
+    (is (every? identity (mapv (fn [k] (< (utils/abs (- (/ (get samples k) n)
+                                                        (/ 1 3)))
+                                          error-margin))
+                               (-> categorical-pgpm
+                                   (get-in [:suff-stats :counts])
+                                   (keys)))))))
 
 (defn check-suff-stats
   [stattype suff-stats]
@@ -71,7 +69,6 @@
 
 (deftest spec->categorical
   (let [var-name "categorical"
-        parameters {:p {"a" (/ 1 3) "b" (/ 1 3) "c" (/ 1 3)}}
-        categorical (categorical/spec->categorical var-name parameters)]
+        categorical (categorical/spec->categorical var-name ["a" "b" "c"])]
     (is (categorical/categorical? categorical))
-    (is (categorical/categorical? (categorical/spec->categorical var-name parameters {:n 10 :counts {"a" 3 "b" 4 "c" 3}})))))
+    (is (categorical/categorical? (categorical/spec->categorical var-name {:n 10 :counts {"a" 3 "b" 4 "c" 3}})))))
