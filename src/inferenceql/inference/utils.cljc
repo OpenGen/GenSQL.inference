@@ -25,9 +25,19 @@
 
 (defn square [x] (* x x))
 
+(defn variance [a]
+  (if (= 1 (count a))
+         0
+    (/ (->> a
+         (average)
+         (repeat)
+         (map - a)
+         (map square)
+         (reduce +))
+       (- (count a) 1))))
+
 (defn std [a]
-  (Math/sqrt (/ (reduce + (map square (map - a (repeat (average a)))))
-                (- (count a) 1 ))))
+  (Math/sqrt (variance a)))
 
 #?(:clj (defn save-json
           "Writes the provided Vega-Lite JSON to a file in the plots directory with the
