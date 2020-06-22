@@ -7,7 +7,7 @@
 (def gaussian-pgpm
   (let [var-name "gaussian"
         suff-stats {:n 0 :sum-x 0 :sum-x-sq 0}]
-    (gaussian/spec->gaussian var-name suff-stats)))
+    (gaussian/spec->gaussian var-name :suff-stats suff-stats)))
 
 (deftest logpdf
   (let [targets {"gaussian" 0}
@@ -73,5 +73,5 @@
   (let [var-name "gaussian"
         gaussian (gaussian/spec->gaussian var-name)]
     (is (gaussian/gaussian? gaussian))
-    (is (gaussian/gaussian? (gaussian/spec->gaussian var-name {})))
-    (is (gaussian/gaussian? (gaussian/spec->gaussian var-name {} {:m 0 :r 1 :s 1 :nu 1})))))
+    (is (gaussian/gaussian? (gaussian/spec->gaussian var-name :suff-stats {:n 0 :sum-x 0 :sum-x-sq 0})))
+    (is (gaussian/gaussian? (gaussian/spec->gaussian var-name :suff-stats {:n 0 :sum-x 0 :sum-x-sq 0} :hyperparameters{:m 0 :r 1 :s 1 :nu 1})))))

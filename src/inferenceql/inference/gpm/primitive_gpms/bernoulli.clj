@@ -61,10 +61,10 @@
     {:alpha (grid) :beta (grid)}))
 
 (defn spec->bernoulli
-  "Casts a CrossCat category spec to a Bernoulli variable."
-  ([var-name]
-   (spec->bernoulli var-name {:p 0.5} {:n 0 :x-sum 0}))
-  ([var-name suff-stats]
-   (spec->bernoulli var-name suff-stats {:alpha 0.5 :beta 0.5}))
-  ([var-name suff-stats hyperparameters]
-   (->Bernoulli var-name suff-stats hyperparameters)))
+  "Casts a CrossCat category spec to a Bernoulli pGPM.
+  Requires a variable name, optionally takes by key
+  sufficient statistics and hyperparameters."
+  [var-name & {:keys [hyperparameters suff-stats]}]
+  (let [suff-stats' (if-not (nil? suff-stats) suff-stats {:n 0 :x-sum 0})
+        hyperparameters' (if-not (nil? hyperparameters) hyperparameters {:alpha 0.5 :beta 0.5})]
+    (->Bernoulli var-name suff-stats' hyperparameters')))

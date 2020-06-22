@@ -126,11 +126,9 @@
 
 (defn spec->gaussian
   "Casts a CrossCat category spec to a Gaussian pGPM.
-  Requires a variable name, optionally takes by position
-  sufficient statistics, and hyperparameters."
-  ([var-name]
-   (spec->gaussian var-name {:n 0 :sum-x 0 :sum-x-sq 0} {:m 0 :r 1 :s 1 :nu 1}))
-  ([var-name suff-stats]
-   (spec->gaussian var-name suff-stats {:m 0 :r 1 :s 1 :nu 1}))
-  ([var-name suff-stats hyperparameters]
-   (->Gaussian var-name suff-stats hyperparameters)))
+  Requires a variable name, optionally takes by key
+  sufficient statistics and hyperparameters."
+  [var-name & {:keys [hyperparameters suff-stats]}]
+  (let [suff-stats' (if-not (nil? suff-stats) suff-stats {:n 0 :sum-x 0 :sum-x-sq 0})
+        hyperparameters' (if-not (nil? hyperparameters) hyperparameters {:m 0 :r 1 :s 1 :nu 1})]
+    (->Gaussian var-name suff-stats' hyperparameters')))

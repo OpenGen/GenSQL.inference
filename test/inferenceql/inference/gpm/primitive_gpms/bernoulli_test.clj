@@ -7,7 +7,7 @@
 (def bernoulli-pgpm
   (let [var-name "flip"
         suff-stats {:n 0 :x-sum 0}]
-    (bernoulli/spec->bernoulli var-name suff-stats)))
+    (bernoulli/spec->bernoulli var-name :suff-stats suff-stats)))
 
 (deftest logpdf
   (let [targets {"flip" true}
@@ -67,5 +67,5 @@
 
 (deftest spec->bernoulli
   (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli "flip")))
-  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli "flip" {:n 10 :x-sum 9})))
-  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli "flip" {:n 10 :x-sum 9} {:alpha 0.6 :beta 0.4}))))
+  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli "flip" :suff-stats {:n 10 :x-sum 9})))
+  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli "flip" :suff-stats {:n 10 :x-sum 9} :hyperparameters {:alpha 0.6 :beta 0.4}))))

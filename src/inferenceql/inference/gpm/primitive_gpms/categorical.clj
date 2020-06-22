@@ -69,11 +69,12 @@
     {:alpha grid}))
 
 (defn spec->categorical
-  "Casts a CrossCat category spec to a Categorical variable."
-  ([var-name options-or-suff-stats]
-   (if (or (list? options-or-suff-stats) (vector? options-or-suff-stats))
-      (spec->categorical var-name {:n 0 :counts (zipmap options-or-suff-stats (repeat 0))} {:alpha 1})
-      ;; Otherwise, the argument represents the sufficient statistics.
-      (spec->categorical var-name options-or-suff-stats {:alpha 1})))
-  ([var-name suff-stats hyperparameters]
-   (->Categorical var-name suff-stats hyperparameters)))
+  "Casts a CrossCat category spec to a Categorical pGPM.
+  Requires a variable name, optionally takes by key
+  sufficient statistics, options, and hyperparameters."
+  [var-name & {:keys [hyperparameters suff-stats options]}]
+  (let [suff-stats' (if (and (nil? suff-stats) (not (nil? options)))
+                      {:n 0 :counts (zipmap options (repeat 0))}
+                      suff-stats)
+        hyperparameters' (if-not (nil? hyperparameters) hyperparameters {:alpha 1})]
+    (->Categorical var-name suff-stats' hyperparameters')))

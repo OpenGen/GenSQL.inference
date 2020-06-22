@@ -7,7 +7,7 @@
 (def categorical-pgpm
   (let [var-name "categorical"
         suff-stats {:n 0 :counts {"a" 0 "b" 0 "c" 0}}]
-    (categorical/spec->categorical var-name suff-stats)))
+    (categorical/spec->categorical var-name :suff-stats suff-stats)))
 
 (deftest logpdf
   (let [targets {"categorical" "a"}
@@ -69,6 +69,6 @@
 
 (deftest spec->categorical
   (let [var-name "categorical"
-        categorical (categorical/spec->categorical var-name ["a" "b" "c"])]
+        categorical (categorical/spec->categorical var-name :options ["a" "b" "c"])]
     (is (categorical/categorical? categorical))
-    (is (categorical/categorical? (categorical/spec->categorical var-name {:n 10 :counts {"a" 3 "b" 4 "c" 3}})))))
+    (is (categorical/categorical? (categorical/spec->categorical var-name :suff-stats {:n 10 :counts {"a" 3 "b" 4 "c" 3}})))))
