@@ -159,3 +159,15 @@
     (->> (linspace (Math/log start) (Math/log end) n)
          (map #(Math/exp %))
          (take n))))
+
+(defn log-normalize
+  "Normalize a vector of log probabilities, while staying in the log domain."
+  [weights]
+  (if (map? weights)
+    (let [z (logsumexp (vals weights))]
+      (reduce-kv (fn [m k v]
+                   (assoc m k (- v z)))
+                 {}
+                 weights))
+    (let [z (logsumexp weights)]
+      (map #(- % z) weights))))
