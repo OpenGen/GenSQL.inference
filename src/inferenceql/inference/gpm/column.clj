@@ -42,7 +42,7 @@
                                  (repeat (count ys) (generate-category column))))
         ;; Incorporate the data accordingly, based on the latent spec.
         categories' (reduce (fn [acc [row-id datum]]
-                              (if (not (nil? datum))
+                              (if (some? datum)
                                 (let [category (get ys row-id)]
                                   (update acc
                                            category
@@ -53,6 +53,15 @@
                              categories
                              (get column :data))]
     (assoc column :categories categories')))
+
+(defn category-logpdfs
+  "Calculates the logpdf of the target in each of the Column categories."
+  [column target]
+  (reduce-kv (fn [logpdfs cat-name category]
+               (assoc logpdfs cat-name (gpm.proto/logpdf category target {})))
+             {}
+             (merge (:categories column)
+                    {:aux (generate-category column)})))
 
 ;;;; Functions for CrossCat inference
 (defn crosscat-incorporate
@@ -73,16 +82,28 @@
 
 (defn crosscat-unincorporate
   "Unincorporate method for CrossCat inference machinery.
-  Unincorporates the values with the associated `row-id` from the category
+  Unincorporates the data associated with `row-id` from the category
   specified by `category-key`."
   [column category-key row-id]
   (let [values {(:var-name column) (get-in column [:data row-id])}]
     (-> column
-        (update-in [:categories category-key] #(gpm.proto/unincorporate % values))
+        (update-in [:categories] #(let [new-cat (gpm.proto/unincorporate (get % category-key) values)]
+                                    (if (zero? (-> new-cat :suff-stats :n))
+                                      (dissoc % category-key)
+                                      (assoc % category-key new-cat))))
         (update-in [:assignments values] (fnil (fn [cats]
-                                                 (update cats category-key (fnil dec 0)))
+                                                 (let [new-count (dec (get cats category-key 1))]
+                                                   (if (zero? new-count)
+                                                     (dissoc cats category-key)
+                                                     (assoc cats category-key new-count))))
                                                {}))
         (update :data dissoc row-id))))
+
+(defn crosscat-simulate
+  "Given a Column and a category key, simulates a value from that category."
+  [column category-key]
+  (let [category (get-in column [:categories category-key] (generate-category column))]
+    (gpm.proto/simulate category [(:var-name column)] {} 1)))
 
 (defrecord Column [var-name stattype categories assignments hyperparameters hyper-grid metadata]
   gpm.proto/GPM
@@ -118,14 +139,14 @@
                                                    (utils/log-normalize (:weights weights-lls))
                                                    (:logps weights-lls))))))))
   (simulate [this targets constraints n-samples]
-    (let [categories' ; We must add an additional category to truly sample from the Column's CRP.
-          (assoc categories :aux (generate-category this))
-          ;; Generates the CRP weights for the categories.
-          crp-prior (->> categories'
+    (let [;; Generates the CRP weights for the categories.
+          crp-prior (->> categories
                          (reduce-kv (fn [m cat-name category]
-                                      (assoc m cat-name (-> category :suff-stats :n)))
+                                      (assoc m cat-name (Math/log (-> category :suff-stats :n))))
                                     {})
-                         (utils/log-normalize))]
+                         (#(assoc % :aux 0)) ; Add an additional category to sample from the Column's CRP.
+                         (utils/log-normalize))
+          categories' (assoc categories :aux (generate-category this))]
       ;; Sample a category assignment, then simulate a value from that category.
       ;; It is important to note that each sample is independent, and the underlying Column
       ;; is not at all affected for "sequential" simulations.

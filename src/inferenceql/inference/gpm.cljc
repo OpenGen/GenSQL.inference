@@ -2,7 +2,8 @@
   (:require [inferenceql.inference.gpm.multimixture :refer [->Multimixture]]
             #?(:clj [inferenceql.inference.gpm.http :as http])
             [inferenceql.inference.gpm.proto :as gpm-proto]
-            #?(:clj [inferenceql.inference.gpm.column :as column])))
+            #?(:clj [inferenceql.inference.gpm.column :as column])
+            #?(:clj [inferenceql.inference.gpm.view :as view])))
 
 #?(:clj
    (defn http
@@ -21,9 +22,9 @@
    (defn column
      "Returns a CrossCat Column GPM.
 
-     If accessing this constructor directly, it is the responsibility of the user
-     to make sure that all categories are of the correct type, and assignments are
-     consistent in terms of assigning a particular value to a given category.
+     It is the responsibility of the user to make sure that all categories
+     are of the correct type, and assignments are consistent in terms of assigning
+     a particular value to a given category.
 
      var-name: the name of the variable contained in the column.
      stattype: the statistical type of the variable contained in the column (e.g. :bernoulli).
@@ -39,6 +40,30 @@
                `metadata` would contain a list of possible values the variable could take."
      [var-name stattype categories assignments hyperparameters hyper-grid metadata]
      (column/->Column var-name stattype categories assignments hyperparameters hyper-grid metadata)))
+
+#?(:clj
+   (defn view
+     "Returns a CrossCat View GPM.
+
+     It is the responsibility of the user to make sure that all categories
+     are of the correct type, and assignments are consistent in terms of assigning
+     a particular value to a given category.
+
+     columns: map of {column-symbol column}, where each column is a proper Column GPM.
+     latents: map of the below structure, used to keep track of row-category assignments,
+              as well as category sufficient statistics:
+
+              {:alpha  number                     The concentration parameter for the Column's CRP
+               :counts {category-name count}      Maps category name to size of the category. Updated
+                                                  incrementally instead of being calculated on the fly.
+               :y {row-identifier category-name}  Maps rows to their current category assignment.
+
+     assignments: map of {value {:row-ids #{row-ids} category-symbol count}}, used for (un)incorporating
+                  by value alone. The :row-ids key for each set of values is used for CrossCat inference
+                  and the internal labeling of the data."
+
+  [columns latents assignments]
+  (view/->View columns latents assignments)))
 
 (defn Multimixture
   "Wrapper to provide conversion to Multimixture model."
