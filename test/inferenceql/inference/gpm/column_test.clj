@@ -5,26 +5,26 @@
             [inferenceql.inference.gpm.proto :as gpm.proto]))
 
 (def data-bernoulli
-  [true false true true true false])
+  [true true true true false false])
 
 (def data-categorical
-  ["red" "blue" "green" "red" "blue" "red"])
+  ["red" "red" "red" "red" "blue" "green"])
 
 (def data-gaussian
-  [9 1 1 2 3 1])
+  [6 6 6 4 4 4])
 
 (def latents
   {:alpha 1
-   :counts {:one 5 :two 1}
+   :counts {:one 4 :two 2}
    :y {0 :one
-       1 :two
+       1 :one
        2 :one
        3 :one
-       4 :one
-       5 :one}})
+       4 :two
+       5 :two}})
 
 (def hypers-bernoulli
-  {:alpha 2 :beta 0.9})
+  {:alpha 1 :beta 1})
 
 (def hypers-categorical
   {:alpha 2})
@@ -73,22 +73,20 @@
 ;; Checks logpdf across the different primitive types.
 (deftest logpdf
   (let [;; alpha' = alpha + # true, beta' = beta + # false
-        ;; alpha-1 = 2 + 4 = 6, beta-1 = 0.9 + 1 = 1.9
-        ;; alpha-2 = 2 + 0 = 2, beta-2 = 0.9 + 1 = 1.9
+        ;; alpha-1 = 1 + 4 = 5, beta-1 = 1 + 0 = 1
+        ;; alpha-2 = 1 + 0 = 1, beta-2 = 1 + 2 = 3
         ;; logP(true | column-bernoulli) = logsumexp(weight-1 + logP(true | category-1),
         ;;                                           weight-2 + logP(true | category-2),
         ;;                                           weight-aux + logP(true | category-aux))
-        ;;                               = logsumexp(ln(5/(6 + alpha)) + ln(6/7.9), ln(1/(6 + alpha)) + ln(2/3.9),
-        ;;                                           ln(alpha/(6 + alpha)) + ln(2/2.9))
-        ;;                               = -0.336483
-        bernoulli-true-sol -0.336483
+        ;;                               = logsumexp(ln(4/7) + ln(5/6), ln(2/7) + ln(1/4), ln(1/7) + ln(1/2))
+        ;;                               = -0.4795730803
+        bernoulli-true-sol -0.4795730803
         bernoulli-true (gpm.proto/logpdf column-bernoulli {(:var-name column-bernoulli) true} {})
         ;; logP(false | column-bernoulli) = logsumexp(weight-1 + logP(false | category-1),
         ;;                                            weight-2 + logP(false | category-2))
-        ;;                                = logsumexp(ln(5/(6 + alpha)) + ln(1.9/7.9), ln(1/(6 + alpha)) + ln(1.9/3.9),
-        ;;                                            ln(alpha/(6 + alpha)) + ln(0.9/2.9))
-        ;;                                = -1.25273
-        bernoulli-false-sol -1.25273
+        ;;                                = logsumexp(ln(4/7) + ln(1/6), ln(2/7) + ln(3/4), ln(1/7) + ln(1/2))
+        ;;                                = -0.965080896
+        bernoulli-false-sol -0.965080896
         bernoulli-false (gpm.proto/logpdf column-bernoulli {(:var-name column-bernoulli) false} {})
 
         ;; alpha comes from the CRP.
@@ -96,21 +94,17 @@
         ;; logP("red" | column-categorical) = logsumexp(weight-1 + logP("red" | category-1),
         ;;                                              weight-2 + logP("red" | category-2),
         ;;                                              weight-aux + logP("red" | category-aux)
-        ;;                                  = logsumexp(ln(5/(6 + alpha)) + ln((alpha-c + 3)/(3*alpha-c + 5)),
-        ;;                                              ln(1/(6 + alpha)) + ln(alpha-c/(3*alpha-c + 1)),
-        ;;                                              ln(1/(6 + alpha)) + ln(alpha-c/(3*alpha-c)))
-        ;;                                  = -0.88404
-        categorical-red-sol -0.88404
+        ;;                                  = logsumexp(ln(4/7) + ln(6/10), ln(2/7) + ln(2/8), ln(1/7) + ln(1/3))
+        ;;                                  = -0.7723965522
+        categorical-red-sol -0.7723965522
         categorical-red (gpm.proto/logpdf column-categorical {(:var-name column-categorical) "red"} {})
 
         ;; logP("blue" | column-categorical) = logsumexp(weight-1 + logP("blue" | category-1),
         ;;                                               weight-2 + logP("blue" | category-2),
         ;;                                               weight-aux + logP("blue" | category-aux)
-        ;;                                  = logsumexp(ln(5/(6 + alpha)) + ln((alpha-c + 1)/(3*alpha-c + 5)),
-        ;;                                              ln(1/(6 + alpha)) + ln((alpha-c + 1)/(3*alpha-c + 1)),
-        ;;                                              ln(alpha/(6 + alpha)) + ln(alpha-c/(3*alpha-c)))
-        ;;                                  = -1.19188
-        categorical-blue-sol -1.19188
+        ;;                                  = logsumexp(ln(4/7) + ln(2/10), ln(2/7) + ln(3/8), ln(1/7) + ln(1/3))
+        ;;                                  = -1.3128668926
+        categorical-blue-sol -1.3128668926
         categorical-blue (gpm.proto/logpdf column-categorical {(:var-name column-categorical) "blue"} {})
         categorical-green (gpm.proto/logpdf column-categorical {(:var-name column-categorical) "green"} {})
 
@@ -128,3 +122,43 @@
                              (+ (Math/exp categorical-red) (Math/exp categorical-blue) (Math/exp categorical-green))
                              absolute-difference
                              threshold))))
+
+;; Checks logpdf across the different primitive types.
+(deftest simulate
+  (let [n-samples-bernoulli 10000
+        threshold 0.1
+        ;; alpha' = alpha + # true, beta' = beta + # false
+        ;; alpha-1 = 1 + 4 = 5, beta-1 = 1 + 0 = 1
+        ;; alpha-2 = 1 + 0 = 1, beta-2 = 1 + 2 = 3
+        ;; mean-1 = alpha-1/(alpha-1 + beta-1) = 5/6
+        ;; mean-2 = alpha-2/(alpha-2 + beta-2) = 1/4
+        ;; mean-aux = alpha/(alpha + beta) = 1/2
+        ;; bernoulli-mean = weight-1 * mean-1 + weight-2 * mean-2 + weight-aux * mean-aux
+        ;;                = 4/7 * 5/6 + 2/7 * 1/4 + 1/7 * 1/2
+        ;;                = 0.619047619
+        bernoulli-mean 0.619047619
+        bernoulli-emp-mean (double (utils/average (map (fn [sample] (if sample 1 0))
+                                                       (flatten (gpm.proto/simulate column-bernoulli ["flip"] {} n-samples-bernoulli)))))
+
+        n-samples-categorical 100000
+        ;; alpha-red-mean = 4/7 * 6/10 + 2/7 * 2/8 + 1/7 * 1/3 = 0.4619047619
+        ;; alpha-blue-mean = 4/7 * 2/10 + 2/7 * 3/8 + 1/7 * 1/3 = 0.269047619
+        ;; alpha-green-mean = 4/7 * 2/10 + 2/7 * 3/8 + 1/7 * 1/3 = 0.269047619
+        ;; Then we normalize and create the empirical distribution.
+        categorical-dist {"red" 0.4619047619 "blue" 0.269047619 "green" 0.269047619}
+        categorical-emp-dist (reduce-kv (fn [m k v]
+                                          (assoc m k (double (/ v n-samples-categorical))))
+                                        {}
+                                        (frequencies (flatten (gpm.proto/simulate column-categorical ["color"] {} n-samples-categorical))))
+
+        n-samples-gaussian 100000
+        gaussian-threshold 0.5
+        ;; mu-1 = (r * m + sum-x-1) / (r + n) = (1 * 0 + 22)/ (1 + 4) = 4.4
+        ;; mu-2 = (r * m + sum-x-2) / (r + n) = (1 * 0 + 8)/ (1 + 2) = 2.6666666667
+        ;; mu-aux = (r * m) / r = 0
+        ;; mean-mu = 4/7 * 4.4 + 2/7 * 2.6666666667 + 1/7 * 0 = 3.2761904762
+        gaussian-mean 3.2761904762
+        gaussian-emp-mean (double (utils/average (flatten (gpm.proto/simulate column-gaussian ["height"] {} n-samples-gaussian))))]
+    (is (utils/almost-equal? bernoulli-emp-mean bernoulli-mean absolute-difference threshold))
+    (is (utils/almost-equal-maps? categorical-dist categorical-emp-dist absolute-difference threshold))
+    (is (utils/almost-equal? gaussian-emp-mean gaussian-mean absolute-difference gaussian-threshold))))

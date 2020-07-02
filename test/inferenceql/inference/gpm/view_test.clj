@@ -196,8 +196,7 @@
                                                       (assoc m k (double (/ v n-samples-categorical))))
                                                     {}
                                                     (frequencies (flatten (map #(get % "color")
-                                                                               constrained-samples))))
-    ]
+                                                                               constrained-samples))))]
     (is (utils/almost-equal? unconstrained-bernoulli-emp-mean unconstrained-bernoulli-mean absolute-difference threshold-bernoulli))
     (is (utils/almost-equal-maps? unconstrained-categorical-emp-dist unconstrained-categorical-dist absolute-difference threshold-categorical))
     (is (utils/almost-equal? unconstrained-gaussian-emp-mean unconstrained-gaussian-mean absolute-difference threshold-gaussian))
