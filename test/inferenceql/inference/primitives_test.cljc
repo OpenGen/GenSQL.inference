@@ -174,7 +174,8 @@
     (is (< (utils/abs (- (Math/exp (prim/logpdf x dist {:mu mu :sigma sigma}))
                         0.39894))
            error))
-    (is (thrown? Exception
+    (is (thrown? #?(:clj Exception
+                    :cljs js/Error)
                  (prim/logpdf x :foobar {:mu mu :sigma sigma})))))
 
 (deftest logpdf-simulate

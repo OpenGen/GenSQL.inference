@@ -14,8 +14,7 @@
         constraints {"gaussian" 1}]
     ;; See http://www.stats.ox.ac.uk/~teh/research/notes/GaussianInverseGamma.pdf for
     ;; calculation.
-    (is (< (utils/abs (- 0.22507 (Math/exp (gpm.proto/logpdf gaussian-pgpm targets {}))))
-           1e-4))
+    (is (utils/almost-equal? (Math/log 0.22507) (gpm.proto/logpdf gaussian-pgpm targets {}) utils/relerr 1e-3))
     (is (= 1.0 (Math/exp (gpm.proto/logpdf gaussian-pgpm {} {}))))
     (is (= 1.0 (Math/exp (gpm.proto/logpdf gaussian-pgpm targets targets))))
     (is (= ##-Inf (gpm.proto/logpdf gaussian-pgpm targets constraints)))))

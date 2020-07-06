@@ -11,8 +11,9 @@
 
 (deftest logpdf
   (let [targets {"categorical" "a"}
-        constraints {"categorical" "b"}]
-    (is (= (double (/ 1 3)) (Math/exp (gpm.proto/logpdf categorical-pgpm targets {}))))
+        constraints {"categorical" "b"}
+        threshold 1e-5]
+    (is (utils/almost-equal? (double (/ 1 3)) (Math/exp (gpm.proto/logpdf categorical-pgpm targets {})) utils/relerr threshold))
     (is (= 1.0 (Math/exp (gpm.proto/logpdf categorical-pgpm {} {}))))
     (is (= 1.0 (Math/exp (gpm.proto/logpdf categorical-pgpm targets targets))))
     (is (= ##-Inf (gpm.proto/logpdf categorical-pgpm targets constraints)))))

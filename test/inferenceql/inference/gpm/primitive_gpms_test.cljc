@@ -39,5 +39,5 @@
                                                        :suff-stats gaussian-suff-stats
                                                        :hyperparameters gaussian-hyperparameters))))
     (is (not (primitives/primitive? {bernoulli-name "false"})))
-    (is (thrown? Exception
+    (is (thrown? #?(:clj Exception :cljs js/Error)
                  (primitives/->pGPM :bad-bernoulli bernoulli-name)))))

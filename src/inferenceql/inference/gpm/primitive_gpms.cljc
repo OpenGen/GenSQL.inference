@@ -17,9 +17,8 @@
     :bernoulli (bernoulli/hyper-grid data n-grid)
     :categorical (categorical/hyper-grid data n-grid)
     :gaussian (gaussian/hyper-grid data n-grid)
-    (ex-info (str "pGPM doesn't exist: " stattype)
-             {:stattype stattype
-              :data data})))
+    (throw (ex-info (str "pGPM doesn't exist: " stattype)
+                   {:stattype stattype :data data}))))
 
 (defn ->pGPM
   "Cast a spec to the specified pGPM.
