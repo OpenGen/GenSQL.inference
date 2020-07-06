@@ -23,7 +23,7 @@
 
 (deftest simulate
   (let [n 100000
-        error-margin 15
+        error-margin 20
         targets []
         constraints {}
         average (/ (reduce + (gpm.proto/simulate gaussian-pgpm targets constraints n))

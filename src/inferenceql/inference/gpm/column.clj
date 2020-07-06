@@ -39,7 +39,7 @@
   (let [ys (:y latents)
         categories (into {} (map vector
                                  (vals ys)
-                                 (repeat (count ys) (generate-category column))))
+                                 (repeat (generate-category column))))
         ;; Incorporate the data accordingly, based on the latent spec.
         categories' (reduce (fn [acc [row-id datum]]
                               (if (some? datum)
@@ -48,7 +48,7 @@
                                            category
                                            #(gpm.proto/incorporate
                                               %
-                                              datum)))
+                                              {(:var-name column) datum})))
                                   acc))
                              categories
                              (get column :data))]
@@ -60,8 +60,18 @@
   (reduce-kv (fn [logpdfs cat-name category]
                (assoc logpdfs cat-name (gpm.proto/logpdf category target {})))
              {}
-             (merge (:categories column)
-                    {:aux (generate-category column)})))
+             (assoc (:categories column) :aux (generate-category column))))
+
+(defn update-hypers
+  "Update the hyperparameters across all categories in a Column GPM."
+  [column]
+  (let [hypers (:hyperparameters column)]
+    (update column :categories #(reduce-kv (fn [cats' cat-name category]
+                                             (assoc cats'
+                                                    cat-name
+                                                    (assoc category :hyperparameters hypers)))
+                                           {}
+                                           %))))
 
 ;;;; Functions for CrossCat inference
 (defn crosscat-incorporate
@@ -104,6 +114,20 @@
   [column category-key]
   (let [category (get-in column [:categories category-key] (generate-category column))]
     (gpm.proto/simulate category [(:var-name column)] {} 1)))
+
+(defn crosscat-logpdf-score
+  "Logpdf score used in CrossCat inference. This allows easy scoring of custom proposals
+  to column hyperparameters across all categories."
+  [column]
+  (let [hypers (:hyperparameters column)]
+    (gpm.proto/logpdf-score (update column
+                                    :categories
+                                    #(reduce-kv (fn [categories' cat-name category]
+                                                  (assoc categories'
+                                                         cat-name
+                                                         (assoc category :hyperparameters hypers)))
+                                                {}
+                                                %)))))
 
 (defrecord Column [var-name stattype categories assignments hyperparameters hyper-grid metadata]
   gpm.proto/GPM
@@ -264,3 +288,9 @@
       (if crosscat
         (assoc column :data data)
         column))))
+
+(defn column?
+  "Checks if the given GPM is a Column."
+  [stattype]
+  (and (record? stattype)
+       (instance? Column stattype)))

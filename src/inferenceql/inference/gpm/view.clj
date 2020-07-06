@@ -230,8 +230,8 @@
                        internally, as CrossCat inference relies on unique row identifiers for
                        efficient inference."
   ([spec latents types data]
-   (construct-view-from-latents spec latents types data {:options {}}))
-  ([spec latents types data {:keys [options]}]
+   (construct-view-from-latents spec latents types data {:options {} :crosscat false}))
+  ([spec latents types data {:keys [options crosscat]}]
    (let [hypers (:hypers spec)
          var-names (keys hypers)
          columns (->> var-names
@@ -252,7 +252,8 @@
                                           (get hypers var-name)
                                           latents
                                           var-data
-                                          {:options options})})))
+                                          {:options options
+                                           :crosscat crosscat})})))
                       (apply merge))
          assignments (reduce-kv (fn [assignments' row-id datum]
                                   (let [y (get-in latents [:y row-id])]
@@ -262,3 +263,9 @@
                                 {}
                                 data)]
      (->View columns latents assignments))))
+
+(defn view?
+  "Checks if the given GPM is a View."
+  [stattype]
+  (and (record? stattype)
+       (instance? View stattype)))
