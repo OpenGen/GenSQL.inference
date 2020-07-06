@@ -75,8 +75,8 @@
   [gpm]
   (cond
     (column/column? gpm) (infer-hyperparameters-column gpm)
-    ;; The below will be uncommented as the necessary GPMs are introduced.
     (view/view? gpm) (infer-hyperparameters-view gpm)
+    ;; The below will be uncommented as the necessary GPMs are introduced.
     ; (xcat/->XCat) (infer-hyperparameters-xcat gpm)
     :else (throw (ex-info (str "Column hyperparameter inference cannot operate"
                                " on GPM of type: "

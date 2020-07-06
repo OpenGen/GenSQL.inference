@@ -56,11 +56,18 @@
 
 (defn category-logpdfs
   "Calculates the logpdf of the target in each of the Column categories."
-  [column target]
-  (reduce-kv (fn [logpdfs cat-name category]
-               (assoc logpdfs cat-name (gpm.proto/logpdf category target {})))
-             {}
-             (assoc (:categories column) :aux (generate-category column))))
+  ([column target]
+   (category-logpdfs column target {:add-aux false}))
+  ([column target {:keys [add-aux]}]
+   (let [categories (if add-aux
+                      (assoc (:categories column) 
+                             :aux
+                             (generate-category column))
+                      (:categories column))]
+   (reduce-kv (fn [logpdfs cat-name category]
+                (assoc logpdfs cat-name (gpm.proto/logpdf category target {})))
+              {}
+              categories))))
 
 (defn update-hypers
   "Update the hyperparameters across all categories in a Column GPM."
@@ -80,7 +87,7 @@
   specified by `category-key`."
   [column values category-key row-id]
   (let [x (get values (:var-name column))]
-    (if-not (nil? x)
+    (if (some? x)
       (-> column
           (update-in [:categories category-key] (fnil #(gpm.proto/incorporate % values)
                                                       (generate-category column)))
@@ -95,19 +102,22 @@
   Unincorporates the data associated with `row-id` from the category
   specified by `category-key`."
   [column category-key row-id]
-  (let [values {(:var-name column) (get-in column [:data row-id])}]
-    (-> column
-        (update-in [:categories] #(let [new-cat (gpm.proto/unincorporate (get % category-key) values)]
-                                    (if (zero? (-> new-cat :suff-stats :n))
-                                      (dissoc % category-key)
-                                      (assoc % category-key new-cat))))
-        (update-in [:assignments values] (fnil (fn [cats]
-                                                 (let [new-count (dec (get cats category-key 1))]
-                                                   (if (zero? new-count)
-                                                     (dissoc cats category-key)
-                                                     (assoc cats category-key new-count))))
-                                               {}))
-        (update :data dissoc row-id))))
+  (let [var-data (get-in column [:data row-id])
+        values {(:var-name column) var-data}]
+    (if (some? var-data)
+      (-> column
+          (update-in [:categories] #(let [new-cat (gpm.proto/unincorporate (get % category-key) values)]
+                                      (if (zero? (-> new-cat :suff-stats :n))
+                                        (dissoc % category-key)
+                                        (assoc % category-key new-cat))))
+          (update-in [:assignments values] (fnil (fn [cats]
+                                                   (let [new-count (dec (get cats category-key 1))]
+                                                     (if (zero? new-count)
+                                                       (dissoc cats category-key)
+                                                       (assoc cats category-key new-count))))
+                                                 {}))
+          (update :data dissoc row-id))
+      column)))
 
 (defn crosscat-simulate
   "Given a Column and a category key, simulates a value from that category."

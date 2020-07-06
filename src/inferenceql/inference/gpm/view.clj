@@ -11,11 +11,13 @@
 
 (defn column-logpdfs
   "Given a map of columns, and targets, returns a map of category probabilities of the targets."
-  [columns targets]
-  (->> targets
-       (map (fn [[var-name target]]
-              (column/category-logpdfs (get columns var-name) {var-name target})))
-       (apply merge-with + {})))
+  ([columns targets]
+   (column-logpdfs columns targets {:add-aux false}))
+  ([columns targets {:keys [add-aux]}]
+    (->> targets
+         (map (fn [[var-name target]]
+                (column/category-logpdfs (get columns var-name) {var-name target} {:add-aux add-aux})))
+         (apply merge-with + {}))))
 
 (defn add-aux-categories
   "Add m auxiliary categories to the given view."
@@ -61,28 +63,29 @@
 (defn incorporate-into-category
   "Incorporate method for CrossCat inference machinery.
   Incorporates `values` into the category specified by `category-key`."
-  [view values category-key]
-  (let [row-id (gensym)]
-    (-> view
-        ;; latents are used only in CrossCat inference. This implementation of row assignments
-        ;; may be deprecated, depending on how the the inference procedures are adjusted.
-        (assoc-in [:latents :y row-id] category-key)
-        (update-in [:latents :counts category-key] (fnil inc 0))
-        ;; assignments is used for a standalone View.
-        (update-in [:assignments values] (fnil (fn [categories]
-                                                 (-> categories
-                                                     (update category-key (fnil inc 0))
-                                                     (update :row-ids (fnil #(conj % row-id) #{}))))
-                                               {}))
-        (update :columns #(reduce-kv (fn [columns' col-name column]
-                                       (let [col-data {col-name (get values col-name)}]
-                                         (assoc columns' col-name (column/crosscat-incorporate
-                                                                    column
-                                                                    col-data
-                                                                    category-key
-                                                                    row-id))))
-                                     {}
-                                     %)))))
+  ([view values category-key]
+   (incorporate-into-category view values category-key (gensym)))
+  ([view values category-key row-id]
+   (-> view
+       ;; latents are used only in CrossCat inference. This implementation of row assignments
+       ;; may be deprecated, depending on how the the inference procedures are adjusted.
+       (assoc-in [:latents :y row-id] category-key)
+       (update-in [:latents :counts category-key] (fnil inc 0))
+       ;; assignments is used for a standalone View.
+       (update-in [:assignments values] (fnil (fn [categories]
+                                                (-> categories
+                                                    (update category-key (fnil inc 0))
+                                                    (update :row-ids (fnil #(conj % row-id) #{}))))
+                                              {}))
+       (update :columns #(reduce-kv (fn [columns' col-name column]
+                                      (let [col-data {col-name (get values col-name)}]
+                                        (assoc columns' col-name (column/crosscat-incorporate
+                                                                   column
+                                                                   col-data
+                                                                   category-key
+                                                                   row-id))))
+                                    {}
+                                    %)))))
 
 (defn unincorporate-from-category
   "Unincorporate method for CrossCat inference machinery.
@@ -146,9 +149,9 @@
                                  crp-counts)
           ;; Map of category->loglikelihood.
           ;; We must reweight the logpdf of each category by its CRP weight.
-          lls-joint (column-logpdfs columns (merge targets constraints))
+          lls-joint (column-logpdfs columns (merge targets constraints) {:add-aux true})
           logp-joint (utils/logsumexp (vals (merge-with + lls-joint crp-weights)))
-          lls-constraints (column-logpdfs columns constraints)
+          lls-constraints (column-logpdfs columns constraints {:add-aux true})
           logp-constraints (utils/logsumexp (vals (merge-with + lls-constraints crp-weights)))]
       (- logp-joint logp-constraints)))
   (simulate [this targets constraints n-samples]
