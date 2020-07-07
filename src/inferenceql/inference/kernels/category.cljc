@@ -3,9 +3,10 @@
             [inferenceql.inference.primitives :as primitives]
             [inferenceql.inference.gpm.view :as view]))
 
-(defn save-latents-raw
-  [latents file]
-  (spit file (str latents "\n") :append true))
+#?(:clj
+   (defn save-latents-raw
+     [latents file]
+     (spit file (str latents "\n") :append true)))
 
 (defn crp-weights
   "Given a view and the number of auxiliary categories, calculates the CRP weights."

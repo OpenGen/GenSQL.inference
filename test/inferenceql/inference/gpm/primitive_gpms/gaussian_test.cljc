@@ -19,7 +19,6 @@
     (is (= 1.0 (Math/exp (gpm.proto/logpdf gaussian-pgpm targets targets))))
     (is (= ##-Inf (gpm.proto/logpdf gaussian-pgpm targets constraints)))))
 
-
 (deftest simulate
   (let [n 100000
         error-margin 20
