@@ -106,10 +106,7 @@
         values {(:var-name column) var-data}]
     (if (some? var-data)
       (-> column
-          (update-in [:categories] #(let [new-cat (gpm.proto/unincorporate (get % category-key) values)]
-                                      (if (zero? (-> new-cat :suff-stats :n))
-                                        (dissoc % category-key)
-                                        (assoc % category-key new-cat))))
+          (update-in [:categories category-key] #(gpm.proto/unincorporate % values))
           (update-in [:assignments values] (fnil (fn [cats]
                                                    (let [new-count (dec (get cats category-key 1))]
                                                      (if (zero? new-count)

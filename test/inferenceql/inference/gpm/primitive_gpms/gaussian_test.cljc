@@ -21,13 +21,18 @@
 
 (deftest simulate
   (let [n 100000
-        error-margin 20
         targets []
         constraints {}
-        average (/ (reduce + (gpm.proto/simulate gaussian-pgpm targets constraints n))
+        incorporated-value 5
+        gaussian-pgpm-simulate (-> gaussian-pgpm
+                                   (gpm.proto/incorporate {"gaussian" incorporated-value})
+                                   (gpm.proto/incorporate {"gaussian" incorporated-value})
+                                   (gpm.proto/incorporate {"gaussian" incorporated-value})
+                                   (gpm.proto/incorporate {"gaussian" incorporated-value})
+                                   (gpm.proto/incorporate {"gaussian" incorporated-value}))
+        average (/ (reduce + (gpm.proto/simulate gaussian-pgpm-simulate targets constraints n))
                    n)]
-    (is (< (utils/abs average)
-           error-margin))))
+    (is (< 4 average 5))))
 
 (defn check-suff-stats
   [stattype suff-stats]

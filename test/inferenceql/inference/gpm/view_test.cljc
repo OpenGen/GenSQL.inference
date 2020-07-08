@@ -127,11 +127,10 @@
         threshold-bernoulli 1e-2
         unconstrained-bernoulli-mean 0.619047619
 
-        n-samples-categorical 100000
         threshold-categorical 5e-2
         unconstrained-categorical-dist {"red" 0.4619047619 "blue" 0.269047619 "green" 0.269047619}
 
-        threshold-gaussian 1e-1
+        threshold-gaussian 0.5
         unconstrained-gaussian-mean 3.2761904762
 
         ;; First, we consider an unconstrained simulation query. Because a category
@@ -139,13 +138,13 @@
         ;; from a view as n-samples of each of the column variables, when considered independently.
         ;; That is, we can consider them as joint samples across all columns, or samples from each
         ;; column independently.
-        n-samples 100000
+        n-samples 10000
         unconstrained-samples (gpm.proto/simulate view-inf targets-unconstrained empty-constraints n-samples)
         unconstrained-bernoulli-emp-mean (double (utils/average (map (fn [sample] (if sample 1 0))
                                                                      (flatten (map #(get % "flip")
                                                                                    unconstrained-samples)))))
         unconstrained-categorical-emp-dist (reduce-kv (fn [m k v]
-                                                        (assoc m k (double (/ v n-samples-categorical))))
+                                                        (assoc m k (double (/ v n-samples))))
                                                       {}
                                                       (frequencies (flatten (map #(get % "color")
                                                                                  unconstrained-samples))))
@@ -193,7 +192,7 @@
         ;; alpha-green-mean = 0.8163265307 * 2/10 + 0.06122448979 * 3/8 + 0.1224489796 * 1/3 = 0.2270408163
         constrained-categorical-dist {"red" 0.5459183674 "blue" 0.2270408163 "green" 0.2270408163}
         constrained-categorical-emp-dist (reduce-kv (fn [m k v]
-                                                      (assoc m k (double (/ v n-samples-categorical))))
+                                                      (assoc m k (double (/ v n-samples))))
                                                     {}
                                                     (frequencies (flatten (map #(get % "color")
                                                                                constrained-samples))))]

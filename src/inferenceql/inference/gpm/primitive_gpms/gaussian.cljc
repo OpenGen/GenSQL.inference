@@ -118,7 +118,9 @@
   This mirrors the implementation in `cgpm` library for a `normal` variable."
   [data n-grid]
   (let [n (inc (count data))
-        sum-sq-dev (* (utils/variance data) (- n 2))]
+        sum-sq-dev (* (utils/variance data) (- n 2))
+        ;; Must ensure the sum of squares deviation is nonzero.
+        sum-sq-dev (if (zero? sum-sq-dev) 0.01 sum-sq-dev)]
     {:m (utils/linspace (apply min data) (inc (apply max data)) n-grid)
      :r (utils/log-linspace (/ 1 n) n n-grid)
      :s (utils/log-linspace (/ sum-sq-dev 100.) sum-sq-dev n-grid)
