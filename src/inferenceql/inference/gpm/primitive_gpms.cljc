@@ -27,4 +27,6 @@
   (case primitive
     :bernoulli (bernoulli/spec->bernoulli var-name :suff-stats suff-stats :hyperparameters hyperparameters)
     :categorical (categorical/spec->categorical var-name :suff-stats suff-stats :hyperparameters hyperparameters :options options)
-    :gaussian (gaussian/spec->gaussian var-name :suff-stats suff-stats :hyperparameters hyperparameters)))
+    :gaussian (gaussian/spec->gaussian var-name :suff-stats suff-stats :hyperparameters hyperparameters)
+    (throw (ex-info (str "pGPM doesn't exist for var-name: " primitive " for " var-name)
+                   {:primitive primitive}))))
