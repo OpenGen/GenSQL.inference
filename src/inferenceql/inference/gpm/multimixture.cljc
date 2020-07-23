@@ -5,8 +5,7 @@
             [inferenceql.inference.gpm.proto :as gpm-proto]))
 
 ;; XXX Currently, assumes that the row generator of the mmix map is passed in.
-(defrecord Multimixture
-    [model]
+(defrecord Multimixture [vars views]
   gpm-proto/GPM
 
   (logpdf [this targets constraints]
@@ -14,7 +13,7 @@
           target-constraint-addrs-vals (mmix.utils/with-row-values {}
                                          (merge targets
                                                 constraints))
-          row-generator                (mmix.utils/optimized-row-generator model)
+          row-generator                (mmix.utils/optimized-row-generator this)
 
           ;; Run infer to obtain probabilities.
           [_ _ log-weight-numer] (mp/infer-and-score
@@ -32,7 +31,7 @@
 
   (simulate [this targets constraints n-samples]
     (let [constraint-addrs-vals (mmix.utils/with-row-values {} constraints)
-          generative-model      (mmix.utils/optimized-row-generator model)
+          generative-model      (mmix.utils/optimized-row-generator this)
           gen-fn                #(let [[sample _ _] (mp/infer-and-score :procedure generative-model
                                                                         :observation-trace constraint-addrs-vals)]
                                    (select-keys sample targets))]

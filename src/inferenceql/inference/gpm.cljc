@@ -1,5 +1,5 @@
 (ns inferenceql.inference.gpm
-  (:require [inferenceql.inference.gpm.multimixture :refer [->Multimixture]]
+  (:require [inferenceql.inference.gpm.multimixture :as mmix]
             #?(:clj [inferenceql.inference.gpm.http :as http])
             [inferenceql.inference.gpm.proto :as gpm-proto]
             [inferenceql.inference.gpm.column :as column]
@@ -76,7 +76,7 @@
 (defn Multimixture
   "Wrapper to provide conversion to Multimixture model."
   [model]
-  (->Multimixture model))
+  (mmix/map->Multimixture model))
 
 (defn gpm?
   "Returns `true` if `x` is a generative population model."
