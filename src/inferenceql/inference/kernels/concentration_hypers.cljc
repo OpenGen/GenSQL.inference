@@ -1,5 +1,6 @@
 (ns inferenceql.inference.kernels.concentration-hypers
   (:require [inferenceql.inference.gpm.view :as view]
+            [inferenceql.inference.gpm.crosscat :as xcat]
             [inferenceql.inference.utils :as utils]
             #?(:clj [clojure.data.json :as json])
             [inferenceql.inference.primitives :as primitives]))
@@ -82,7 +83,7 @@
   [xcat & {:keys [n-grid] :or {n-grid 30}}]
   (let [alpha-g (infer-alpha xcat n-grid)
         alpha-vs (into {} (map (fn [[view-name view]]
-                                 {view-name (infer-alpha view n-grid)})
+                                 {view-name (infer-alpha-gamma-prior view)})
                                (:views xcat)))]
     (-> xcat
         (assoc-in [:latents :alpha] alpha-g)
@@ -101,6 +102,7 @@
   ([gpm {:keys [n-grid]}]
    (cond
      (view/view? gpm) (infer-alpha gpm n-grid)
+     (xcat/xcat? gpm) (infer-alpha gpm n-grid)
      :else (throw (ex-info (str "Concentration hyperparameter inference cannot operate"
                                 " on GPM of type: "
                                 (type gpm))

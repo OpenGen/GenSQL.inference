@@ -13,12 +13,14 @@
 
 (defn hyper-grid
   [stattype data & {:keys [n-grid] :or {n-grid 30}}]
-  (case stattype
-    :bernoulli (bernoulli/hyper-grid data n-grid)
-    :categorical (categorical/hyper-grid data n-grid)
-    :gaussian (gaussian/hyper-grid data n-grid)
-    (throw (ex-info (str "pGPM doesn't exist: " stattype)
-                   {:stattype stattype :data data}))))
+  (if (empty? data)
+    {}
+    (case stattype
+      :bernoulli (bernoulli/hyper-grid data n-grid)
+      :categorical (categorical/hyper-grid data n-grid)
+      :gaussian (gaussian/hyper-grid data n-grid)
+      (throw (ex-info (str "pGPM doesn't exist: " stattype)
+                     {:stattype stattype :data data})))))
 
 (defn ->pGPM
   "Cast a spec to the specified pGPM.

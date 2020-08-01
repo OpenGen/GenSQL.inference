@@ -83,6 +83,11 @@
   [x]
   (satisfies? gpm-proto/GPM x))
 
+(defn incorporate
+  "Given a GPM, incorporates values into the GPM by updating its sufficient statistics."
+  [gpm values]
+  (gpm-proto/incorporate gpm values))
+
 (defn logpdf
   "Given a GPM, calculates the logpdf of `targets` given `constraints`."
   [gpm targets constraints]

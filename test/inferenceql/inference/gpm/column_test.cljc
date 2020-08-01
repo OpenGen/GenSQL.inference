@@ -125,7 +125,7 @@
 
 ;; Checks logpdf across the different primitive types.
 (deftest simulate
-  (let [n-samples-bernoulli 10000
+  (let [n-samples-bernoulli 1000
         threshold 0.1
         ;; alpha' = alpha + # true, beta' = beta + # false
         ;; alpha-1 = 1 + 4 = 5, beta-1 = 1 + 0 = 1
@@ -140,7 +140,7 @@
         bernoulli-emp-mean (double (utils/average (map (fn [sample] (if sample 1 0))
                                                        (flatten (gpm.proto/simulate column-bernoulli ["flip"] {} n-samples-bernoulli)))))
 
-        n-samples-categorical 100000
+        n-samples-categorical 1000
         ;; alpha-red-mean = 4/7 * 6/10 + 2/7 * 2/8 + 1/7 * 1/3 = 0.4619047619
         ;; alpha-blue-mean = 4/7 * 2/10 + 2/7 * 3/8 + 1/7 * 1/3 = 0.269047619
         ;; alpha-green-mean = 4/7 * 2/10 + 2/7 * 3/8 + 1/7 * 1/3 = 0.269047619
@@ -151,7 +151,7 @@
                                         {}
                                         (frequencies (flatten (gpm.proto/simulate column-categorical ["color"] {} n-samples-categorical))))
 
-        n-samples-gaussian 100000
+        n-samples-gaussian 1000
         gaussian-threshold 0.5
         ;; mu-1 = (r * m + sum-x-1) / (r + n) = (1 * 0 + 22)/ (1 + 4) = 4.4
         ;; mu-2 = (r * m + sum-x-2) / (r + n) = (1 * 0 + 8)/ (1 + 2) = 2.6666666667

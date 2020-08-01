@@ -105,7 +105,6 @@
       (+ (* -0.5 n (+ (Math/log 2) (Math/log Math/PI)))
          z-n
          (- z-0)))))
-
 (defn gaussian?
   "Checks if the given pGPM is Gaussian."
   [stattype]
@@ -121,7 +120,7 @@
         sum-sq-dev (* (utils/variance data) (- n 2))
         ;; Must ensure the sum of squares deviation is nonzero.
         sum-sq-dev (if (zero? sum-sq-dev) 0.01 sum-sq-dev)]
-    {:m (utils/linspace (apply min data) (inc (apply max data)) n-grid)
+    {:m (utils/linspace (apply min data) (inc (+ (apply max data) 5)) n-grid)
      :r (utils/log-linspace (/ 1 n) n n-grid)
      :s (utils/log-linspace (/ sum-sq-dev 100.) sum-sq-dev n-grid)
      :nu (utils/log-linspace 1 n n-grid)}))

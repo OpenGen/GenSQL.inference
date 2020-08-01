@@ -164,7 +164,8 @@
   "Generates a sequence of `n` numbers, linearly (evenly) spaced between `start` and `end`,
   the latter of which is exclusive."
   [start end n]
-  (range start end (/ (- end start) n)))
+  (let [interval (/ (- end start) n)]
+    (range start (+ end interval) interval)))
 
 (defn log-linspace
   "Generates a sequence of `n` numbers, spaced between `start` and `end` on a logarithmic scale,

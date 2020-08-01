@@ -2,6 +2,7 @@
   (:require [inferenceql.inference.gpm.view :as view]
             [clojure.test :as test :refer [deftest is]]
             [inferenceql.inference.utils :as utils]
+            [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.proto :as gpm.proto]))
 
 (def latents
@@ -32,7 +33,7 @@
 
 (def options {"color" ["red" "blue" "green"]})
 
-(def view-inf (view/construct-view-from-latents view-spec latents types data {:options options}))
+(def view-inf (view/construct-view-from-latents view-spec latents types data {:options options :crosscat true}))
 
 ;; Verifies that creating a View with given latent assignments is deterministic.
 (deftest create-view-smoke-test
@@ -201,3 +202,24 @@
     (is (utils/almost-equal? unconstrained-gaussian-emp-mean unconstrained-gaussian-mean absolute-difference threshold-gaussian))
     (is (utils/almost-equal-maps? constrained-categorical-emp-dist constrained-categorical-dist absolute-difference threshold-categorical))
     (is (utils/almost-equal? constrained-gaussian-emp-mean constrained-gaussian-mean absolute-difference threshold-gaussian))))
+
+(def data-bernoulli
+  [false false false false false false])
+
+(def hypers-bernoulli
+  {:alpha 1 :beta 1})
+
+(def column-bernoulli
+  (column/construct-column-from-latents "new-col"
+                                        :bernoulli
+                                        hypers-bernoulli
+                                        latents
+                                        (into {} (map-indexed vector data-bernoulli))
+                                        {:crosscat true}))
+
+;; Tests incorporate-column by adding and then removing the column, ensuring that
+;; the initial and final view states are the same.
+(deftest incorporate-column
+  (let  [view' (view/incorporate-column view-inf column-bernoulli)
+         view (view/unincorporate-column view' (:var-name column-bernoulli))]
+    (is (= view  view-inf))))

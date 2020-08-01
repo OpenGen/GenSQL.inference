@@ -1,8 +1,7 @@
 (ns inferenceql.inference.search.view
   (:require [inferenceql.inference.kernels.hyperparameters :as col-hypers]
             [inferenceql.inference.gpm.view :as view]
-            [inferenceql.inference.gpm.column :as column]
-            [inferenceql.inference.gpm.proto :as gpm.proto]))
+            [inferenceql.inference.gpm.column :as column] [inferenceql.inference.gpm.proto :as gpm.proto]))
 
 (defn generate-logpdf
   "Given a view, variable name, and row-id, calculates the logpdf
@@ -41,7 +40,7 @@
                        binary-labels
                        {:crosscat true})]
     (->> binary-column
-         (view/incorporate-column view binary-name)
+         (view/incorporate-column view)
          (col-hypers/infer-column binary-name)
          (generate-logpdfs binary-name)
          (apply merge)

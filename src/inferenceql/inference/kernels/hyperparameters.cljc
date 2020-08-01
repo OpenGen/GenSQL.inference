@@ -1,6 +1,7 @@
 (ns inferenceql.inference.kernels.hyperparameters
   (:require [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.view :as view]
+            [inferenceql.inference.gpm.crosscat :as xcat]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.primitives :as primitives]))
 
@@ -31,7 +32,8 @@
   [column]
   (let [inferred-column (reduce (fn [column' hyper-name]
                                   (let [hyper' (sample-hyper-parameter column' hyper-name)]
-                                    (assoc-in column' [:hyperparameters hyper-name] hyper')))
+                                    (-> column'
+                                        (assoc-in [:hyperparameters hyper-name] hyper'))))
                                 column
                                 (keys (:hyperparameters column)))]
     ;; Propagate the updated hyperparameters from the Column level
@@ -55,12 +57,10 @@
   "Conducts column hyperparameter inference on each of the Column GPMs
   contained in each of the View GPMs in the given XCat GPM."
   [xcat]
-  (reduce (fn [xcat' view-name]
-            (update-in xcat'
-                       [:views view-name]
-                       #(infer-hyperparameters-view %)))
-          xcat
-          (keys (:views xcat))))
+  (update xcat :views #(reduce-kv (fn [views' view-name view]
+                                    (assoc views' view-name (infer-hyperparameters-view view)))
+                                  {}
+                                  %)))
 
 (defn infer-column
   "Conducts column hyperparameter inference on only the column of
@@ -77,7 +77,7 @@
     (column/column? gpm) (infer-hyperparameters-column gpm)
     (view/view? gpm) (infer-hyperparameters-view gpm)
     ;; The below will be uncommented as the necessary GPMs are introduced.
-    ; (xcat/->XCat) (infer-hyperparameters-xcat gpm)
+    (xcat/xcat? gpm) (infer-hyperparameters-xcat gpm)
     :else (throw (ex-info (str "Column hyperparameter inference cannot operate"
                                " on GPM of type: "
                                (type gpm))

@@ -37,6 +37,8 @@
   Used in incorporate-column."
   [column latents]
   (let [ys (:y latents)
+        data (:data column)
+        var-name (:var-name column)
         categories (into {} (map vector
                                  (vals ys)
                                  (repeat (generate-category column))))
@@ -48,11 +50,18 @@
                                            category
                                            #(gpm.proto/incorporate
                                               %
-                                              {(:var-name column) datum})))
+                                              {var-name datum})))
                                   acc))
                              categories
-                             (get column :data))]
-    (assoc column :categories categories')))
+                             data)
+          assignments (reduce-kv (fn [assignments' row-id data]
+                                   (let [y (get ys row-id)]
+                                     (update-in assignments' [{var-name data} y] (fnil inc 0))))
+                                 {}
+                                 data)]
+    (-> column
+        (assoc :categories categories')
+        (assoc :assignments assignments))))
 
 (defn category-logpdfs
   "Calculates the logpdf of the target in each of the Column categories."
@@ -60,7 +69,7 @@
    (category-logpdfs column target {:add-aux false}))
   ([column target {:keys [add-aux]}]
    (let [categories (if add-aux
-                      (assoc (:categories column) 
+                      (assoc (:categories column)
                              :aux
                              (generate-category column))
                       (:categories column))]
@@ -80,6 +89,13 @@
                                            {}
                                            %))))
 
+(defn update-hyper-grid
+  "doc-string"
+  [column]
+  (let [stattype (:stattype column)
+        data (:data column)]
+    (assoc column :hyper-grid (pgpms/hyper-grid stattype (vals data)))))
+
 ;;;; Functions for CrossCat inference
 (defn crosscat-incorporate
   "Incorporate method for CrossCat inference machinery.
@@ -89,12 +105,13 @@
   (let [x (get values (:var-name column))]
     (if (some? x)
       (-> column
+          ;; 1.) Add the given value to the corresponding category.
           (update-in [:categories category-key] (fnil #(gpm.proto/incorporate % values)
                                                       (generate-category column)))
-          (update-in [:assignments values] (fnil (fn [cats]
-                                                   (update cats category-key (fnil inc 0)))
-                                                 {}))
-          (update :data assoc row-id (get values (:var-name column))))
+          ;; 2.) Increment the category count associated with the datum.
+          (update-in [:assignments values category-key] (fnil inc 0))
+          ;; 3.) Assoc the column data associated with the row.
+          (update :data assoc row-id x))
       column)))
 
 (defn crosscat-unincorporate
@@ -106,13 +123,21 @@
         values {(:var-name column) var-data}]
     (if (some? var-data)
       (-> column
+          ;; 1.) Remove the given value from the corresponding category.
           (update-in [:categories category-key] #(gpm.proto/unincorporate % values))
-          (update-in [:assignments values] (fnil (fn [cats]
-                                                   (let [new-count (dec (get cats category-key 1))]
-                                                     (if (zero? new-count)
-                                                       (dissoc cats category-key)
-                                                       (assoc cats category-key new-count))))
-                                                 {}))
+          ;; 2.) Decrement the category count associated with the datum.
+          (update-in [:assignments values category-key] dec)
+          ;; 3.) Remove the category count if it hits zero as a result.
+          (update-in [:assignments values] (fn [counts]
+                                             (if (zero? (get counts category-key))
+                                               (dissoc counts category-key)
+                                               counts)))
+          ;; 4.) Dissoc the given values if there are no longer rows associated with it.
+          (update :assignments (fn [assignments]
+                                 (if (empty? (get assignments values))
+                                   (dissoc assignments values)
+                                   assignments)))
+          ;; 5.) Dissoc the column data associated with the row.
           (update :data dissoc row-id))
       column)))
 
@@ -217,16 +242,10 @@
   (logpdf-score [this]
     ;; Calculates the logpdf-score by taking the logsumexp of the logpdf-score of the constituent categories,
     ;; weighted by their respective sizes (similar to a CRP, without an additional cluster).
-    (let [weights-lls
-          (reduce-kv (fn [m cat-name category]
-                       (-> m
-                           (assoc-in [:weights cat-name] (Math/log (-> category :suff-stats :n)))
-                           (assoc-in [:lls cat-name] (gpm.proto/logpdf-score category))))
-                     {}
-                     categories)]
-          (->> (merge-with + (utils/log-normalize (:weights weights-lls)) (:lls weights-lls))
-               (vals)
-               (utils/logsumexp)))))
+    (reduce-kv (fn [acc _ category]
+                 (+ acc (gpm.proto/logpdf-score category)))
+               0
+               categories)))
 
 (defn construct-column-from-latents
   "Constructor for a Column GPM, given data for the column and latent

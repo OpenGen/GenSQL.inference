@@ -21,7 +21,10 @@
   (simulate [this targets constraints n-samples]
     (let [p (->> (keys (:counts suff-stats))
                  (reduce (fn [m k]
-                           (assoc m k (gpm.proto/logpdf this {var-name k} {})))
+                           (assoc m k (gpm.proto/logpdf
+                                       this
+                                       {var-name k}
+                                       {})))
                          {})
                  (assoc {} :p))]
     (primitives/simulate n-samples :log-categorical p)))

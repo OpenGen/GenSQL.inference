@@ -7,7 +7,8 @@
   (:require [inferenceql.inference.utils :as utils]
             [inferenceql.inference.primitives :as primitives]
             [inferenceql.inference.gpm.column :as column]
-            [inferenceql.inference.gpm.proto :as gpm.proto]))
+            [inferenceql.inference.gpm.proto :as gpm.proto]
+            [clojure.set]))
 
 (defn column-logpdfs
   "Given a map of columns, and targets, returns a map of category probabilities of the targets."
@@ -71,12 +72,12 @@
        ;; may be deprecated, depending on how the the inference procedures are adjusted.
        (assoc-in [:latents :y row-id] category-key)
        (update-in [:latents :counts category-key] (fnil inc 0))
-       ;; assignments is used for a standalone View.
-       (update-in [:assignments values] (fnil (fn [categories]
-                                                (-> categories
-                                                    (update category-key (fnil inc 0))
-                                                    (update :row-ids (fnil #(conj % row-id) #{}))))
-                                              {}))
+       ;; When updating assignments, we want to
+       ;; 1.) Increase the category count for the given set of values.
+       (update-in [:assignments values :categories category-key] (fnil inc 0))
+       ;; 2.) Add the row-id to the set of row-ids associated with the given values.
+       (update-in [:assignments values :row-ids] (fnil #(conj % row-id) #{}))
+       ;; 3.) Update the relevant columns by assoc'ing the value associated with the row-id.
        (update :columns #(reduce-kv (fn [columns' col-name column]
                                       (let [col-data {col-name (get values col-name)}]
                                         (assoc columns' col-name (column/crosscat-incorporate
@@ -100,12 +101,22 @@
        ;; of row assignments may be deprecated, depending on how the inference procedures are adjusted.
        (update-in [:latents :y] dissoc row-id-remove)
        (update-in [:latents :counts category-remove] dec)
-       (update :assignments (fn [values-dict]
-                                (let [new-count (dec (get-in values-dict [values category-remove]))]
-                                  (if (zero? new-count)
-                                    (dissoc values-dict category-remove)
-                                    (assoc values-dict category-remove new-count)))))
+       ;; When updating assignments, we want to
+       ;; 1.) Decrease the current category count for the given set of values.
+       (update-in [:assignments values :categories category-remove] dec)
+       ;; 2.) Remove the category count if it hits zero as a result.
+       (update :assignments (fn [assignments]
+                              (if (zero? (get-in assignments [values :categories category-remove]))
+                                (update-in assignments [values :categories] dissoc category-remove)
+                                assignments)))
+       ;; 3.) Disj the row-id from the set of row-ids for the given set of values.
        (update-in [:assignments values :row-ids] #(disj % row-id-remove))
+       ;; 4.) Dissoc the given set of values if there are no longer rows associated with it.
+       (update :assignments (fn [assignments]
+                              (if (empty? (get-in assignments [values :row-ids]))
+                                (dissoc assignments values)
+                                assignments)))
+       ;; 5.) Update the relevant columns by dissoc'ing the value associated with the row-id.
        (update :columns #(reduce-kv (fn [columns' col-name column]
                                       (assoc columns' col-name (column/crosscat-unincorporate
                                                                 column
@@ -114,20 +125,94 @@
                                     {}
                                     %)))))
 
+(defn incorporate-by-rowid
+  [gpm values row-id]
+    (let [category-key (primitives/crp-simulate-counts {:alpha (-> gpm :latents :alpha)
+                                                        :counts (-> gpm :latents :counts)})]
+      (incorporate-into-category gpm values category-key row-id)))
+
+(defn update-hyper-grids
+  "doc-string"
+  [view]
+  (update view :columns #(reduce-kv (fn [columns' col-name column]
+                                      (assoc columns' col-name (column/update-hyper-grid column)))
+                                    {}
+                                    %)))
+
 ;;;; Functions for CrossCat inference
 (defn incorporate-column
   "Given a View, a variable name, and a Column GPM, incorporates the Column into the View."
-  [view var-name column]
+  [view column]
   ;; Introducing a new column means we only need to create the correct number of categories,
   ;; then update the row category assignments within them.
-  (update view
-          :columns
-          assoc var-name (column/update-column column (:latents view))))
+  (let [var-name (:var-name column)
+        col-data (:data column)]
+    (-> view
+        ;; Adjust the column data to a particular set of latents.
+        (assoc-in [:columns var-name] (column/update-column column (:latents view)))
+        ;; Update the assignments attribute, which maps values to their category
+        ;; assignments and associated row-ids used in CrossCat inference.
+        (update :assignments (fn [assignments]
+                               (if (empty? assignments)
+                                 ;; If the View is empty, we just need to adjust assignments
+                                 ;; according to the column's data.
+                                 (reduce-kv (fn [assignments' row-id datum]
+                                              (let [datum' {var-name datum}
+                                                    y (get-in (:latents view) [:y row-id])]
+                                                (-> assignments'
+                                                    (update-in [datum' :categories y] (fnil inc 0))
+                                                    (update-in [datum' :row-ids] (fnil #(conj % row-id) #{})))))
+                                            {}
+                                            col-data)
+                                 ;; If the View is not empty, some care must be had in terms
+                                 ;; of updating assignments.
+                                 ;; An example would be merging the below assignments map
+                                 ;;   {{:var-1 :val-1} {:categories {:one 1}
+                                 ;;                     :row-ids #{1 2 3}}}
+                                 ;; with the new column-data
+                                 ;;   {1 :val-2
+                                 ;;    2 :val-3
+                                 ;;    3 :val-2}
+                                 ;; to update assignments as
+                                 ;;   {{:var-1 :val-1
+                                 ;;     :var-2 :val-2} {:categories {:one 1}
+                                 ;;                     :row-ids #{1 3}}
+                                 ;;    {:var-1 :val-1
+                                 ;;     :var-2 :val-3} {:categories {:one 1}
+                                 ;;                     :row-ids #{2}}}
+                                 (reduce-kv (fn [m k v]
+                                              (let [row-ids (:row-ids v)]
+                                                (reduce (fn [m' row-id]
+                                                          (let [row-data (get col-data row-id)
+                                                                k' (assoc k var-name row-data)
+                                                                y (get-in (:latents view) [:y row-id])]
+                                                            (-> m'
+                                                                (update-in [k' :categories y] (fnil inc 0))
+                                                                (update-in [k' :row-ids] (fnil #(conj % row-id) #{})))))
+                                                        m
+                                                        row-ids)))
+                                            {}
+                                            assignments)))))))
 
 (defn unincorporate-column
   "Given a View and a variable name unincorporates the Column from the View."
   [view var-name]
-  (update view :columns dissoc var-name))
+  (let [singleton? (= 1 (count (:columns view)))
+        view' (update view :columns dissoc var-name)]
+    ;; If we're unincorporating a View GPM's only column,
+    ;; it is simplest to clear the assignments attribute.
+    (if singleton?
+      (assoc view' :assignments {})
+      (update view' :assignments (fn [assignments]
+                                   ;; For every assignment to category mapping,
+                                   ;; remove the current variable from each key.
+                                   (let [assignments' (map (fn [[k v]] {(dissoc k var-name) v})
+                                                           assignments)
+                                         merge-fn (fn [a b]
+                                                    (assert (= (keys a) (keys b)))
+                                                    {:categories (merge-with + (:categories a) (:categories b))
+                                                     :row-ids (clojure.set/union (:row-ids a) (:row-ids b))})]
+                                     (apply merge-with merge-fn assignments')))))))
 
 (defrecord View [columns latents assignments]
   gpm.proto/GPM
@@ -198,7 +283,7 @@
                                                         :counts (:counts latents)})]
       (incorporate-into-category this values category-key)))
   (unincorporate [this values]
-    (let [categories (get-in this [:assignments values])
+    (let [categories (get-in this [:assignments values :categories])
           category-remove (rand-nth (filter #(not= :row-ids %) (keys categories)))]
       (unincorporate-from-category this values category-remove)))
 
@@ -261,11 +346,20 @@
          assignments (reduce-kv (fn [assignments' row-id datum]
                                   (let [y (get-in latents [:y row-id])]
                                     (-> assignments'
-                                        (update-in [datum y] (fnil inc 0))
+                                        (update-in [datum :categories y] (fnil inc 0))
                                         (update-in [datum :row-ids] (fnil #(conj % row-id) #{})))))
                                 {}
                                 data)]
      (->View columns latents assignments))))
+
+(defn construct-view-from-hypers
+  "Constructor of a View GPM, given a specification for variable hyperparameters, as well
+  as variable statistical types."
+  [spec types]
+  (let [latents {:alpha 1 :counts {} :y {}}
+        options (:options spec)
+        data {}]
+    (construct-view-from-latents spec latents types data {:options options})))
 
 (defn view?
   "Checks if the given GPM is a View."
