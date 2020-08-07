@@ -140,7 +140,7 @@
         ;; That is, we can consider them as joint samples across all columns, or samples from each
         ;; column independently.
         n-samples 10000
-        unconstrained-samples (gpm.proto/simulate view-inf targets-unconstrained empty-constraints n-samples)
+        unconstrained-samples (repeatedly n-samples #(gpm.proto/simulate view-inf targets-unconstrained empty-constraints))
         unconstrained-bernoulli-emp-mean (double (utils/average (map (fn [sample] (if sample 1 0))
                                                                      (flatten (map #(get % "flip")
                                                                                    unconstrained-samples)))))
@@ -155,7 +155,7 @@
         ;; one constraint. Instead of weighting categories by just the CRP weights, we re-weight by
         ;; the logpdf of the constrained variable(s).
 
-        constrained-samples (gpm.proto/simulate view-inf targets-constrained constraints n-samples)
+        constrained-samples (repeatedly n-samples #(gpm.proto/simulate view-inf targets-constrained constraints))
         ;; So, instead of normalized weights crp-0 crp-1 ... crp-n crp-alpha, we calculate the
         ;; unnormalized weights as follows:
         ;;    weights = 1/Z * (crp-0 * P(constraints | c_0) ... crp-alpha * P(constraints | c_alpha))

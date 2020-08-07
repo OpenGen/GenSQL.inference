@@ -145,7 +145,7 @@
   "Given a Column and a category key, simulates a value from that category."
   [column category-key]
   (let [category (get-in column [:categories category-key] (generate-category column))]
-    (gpm.proto/simulate category [(:var-name column)] {} 1)))
+    (gpm.proto/simulate category [(:var-name column)] {})))
 
 (defn crosscat-logpdf-score
   "Logpdf score used in CrossCat inference. This allows easy scoring of custom proposals
@@ -194,7 +194,7 @@
                 (utils/logsumexp (vals (merge-with +
                                                    (utils/log-normalize (:weights weights-lls))
                                                    (:logps weights-lls))))))))
-  (simulate [this targets constraints n-samples]
+  (simulate [this targets constraints]
     (let [;; Generates the CRP weights for the categories.
           crp-prior (->> categories
                          (reduce-kv (fn [m cat-name category]
@@ -202,12 +202,10 @@
                                     {})
                          (#(assoc % :aux 0)) ; Add an additional category to sample from the Column's CRP.
                          (utils/log-normalize))
-          categories' (assoc categories :aux (generate-category this))]
-      ;; Sample a category assignment, then simulate a value from that category.
-      ;; It is important to note that each sample is independent, and the underlying Column
-      ;; is not at all affected for "sequential" simulations.
-      (repeatedly n-samples #(let [category-key (primitives/simulate :log-categorical {:p crp-prior})]
-                               (gpm.proto/simulate (get categories' category-key) [var-name] {} 1)))))
+          categories' (assoc categories :aux (generate-category this))
+          ;; Sample a category assignment, then simulate a value from that category.
+          category-key (primitives/simulate :log-categorical {:p crp-prior})]
+      (gpm.proto/simulate (get categories' category-key) [var-name] {})))
 
   gpm.proto/Incorporate
   (incorporate [this values]

@@ -22,7 +22,7 @@
         error-margin 0.01
         targets []
         constraints {}
-        samples (frequencies (gpm.proto/simulate bernoulli-pgpm targets constraints n))]
+        samples (frequencies (repeatedly n #(gpm.proto/simulate bernoulli-pgpm targets constraints)))]
     (is (< (utils/abs (- (/ (get samples true) n)
                          0.5))
            error-margin))))

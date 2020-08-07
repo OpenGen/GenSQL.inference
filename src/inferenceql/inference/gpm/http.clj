@@ -18,11 +18,10 @@
                                :content-type :json})]
       (json/read-value (:body response))))
 
-  (simulate [this targets constraints n-samples]
+  (simulate [this targets constraints]
     (let [body (json/write-value-as-string
                 {:targets targets
-                 :constraints constraints
-                 :n-samples n-samples})
+                 :constraints constraints})
           response (http/post (str url "/simulate")
                               {:accept :json
                                :body body

@@ -18,7 +18,7 @@
                     denom  (Math/log (+ (* alpha (count counts))
                                         (reduce + (vals counts))))]
                 (- numer denom)))))
-  (simulate [this targets constraints n-samples]
+  (simulate [this targets constraints]
     (let [p (->> (keys (:counts suff-stats))
                  (reduce (fn [m k]
                            (assoc m k (gpm.proto/logpdf
@@ -27,7 +27,7 @@
                                        {})))
                          {})
                  (assoc {} :p))]
-    (primitives/simulate n-samples :log-categorical p)))
+    (primitives/simulate :log-categorical p)))
 
   gpm.proto/Incorporate
   (incorporate [this values]

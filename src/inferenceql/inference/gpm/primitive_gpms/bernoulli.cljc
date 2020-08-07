@@ -19,9 +19,9 @@
         constrained? (if (= x x') 0 ##-Inf)
         x (- (Math/log alpha') denom)
         :else (- (Math/log beta') denom))))
-  (simulate [this targets constraints n-samples]
-    (repeatedly n-samples #(< (Math/log (rand))
-                              (gpm.proto/logpdf this {var-name true} {}))))
+  (simulate [this targets constraints]
+    (< (Math/log (rand))
+       (gpm.proto/logpdf this {var-name true} {})))
 
   gpm.proto/Incorporate
   (incorporate [this values]

@@ -239,7 +239,7 @@
           lls-constraints (column-logpdfs columns constraints {:add-aux true})
           logp-constraints (utils/logsumexp (vals (merge-with + lls-constraints crp-weights)))]
       (- logp-joint logp-constraints)))
-  (simulate [this targets constraints n-samples]
+  (simulate [this targets constraints]
     (if (nil? targets)
       '()
       (let [crp-counts (:counts latents)
@@ -266,16 +266,14 @@
                                       (apply merge-with + {})))
             unnormalized-weights (merge-with + crp-weights constraint-weights)
             weights (utils/log-normalize unnormalized-weights)
-            logps {:p weights}]
-        ;; Sample a category assignment, then simulate a value from that category in each of
-        ;; the constituent columns.
-        ;; It is important to note that each sample is independent, and the underlying View
-        ;; is not at all affected for "sequential" simulations.
-        (repeatedly n-samples #(let [category-idx (primitives/simulate :log-categorical logps)]
-                                 (->> targets
-                                      (map (fn [var-name]
-                                             {var-name (column/crosscat-simulate (get columns var-name) category-idx)}))
-                                      (apply merge)))))))
+            logps {:p weights}
+            ;; Sample a category assignment, then simulate a value from that category in each of
+            ;; the constituent columns.
+            category-idx (primitives/simulate :log-categorical logps)]
+        (->> targets
+             (map (fn [var-name]
+                    {var-name (column/crosscat-simulate (get columns var-name) category-idx)}))
+             (apply merge)))))
 
   gpm.proto/Incorporate
   (incorporate [this values]

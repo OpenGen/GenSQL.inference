@@ -175,12 +175,8 @@
 (deftest test-smoke-row-generator
   (is (map? (row-generator))))
 
-(deftest test-smoke-simulate
-  (is (= 3 (count (gpm/simulate gpm-mmix ["x"] {} 3)))))
-
 (deftest test-smoke-simulate-conditional
-  (is (= 999. (get (first (gpm/simulate gpm-mmix ["x"] {"x" 999.} 3))
-                   "x"))))
+  (is (= 999. (get (gpm/simulate gpm-mmix ["x"] {"x" 999.}) "x"))))
 
 (deftest test-smoke-logpdf
   (is (float? (gpm/logpdf gpm-mmix {"x" 0.} {"y" 1.}))))
@@ -234,7 +230,7 @@
       ;; there's currently a performance benefit to doing so.
       (let [point (test-point point-id)
             all-variables (keys (:vars multi-mixture))
-            samples (gpm/simulate gpm-mmix all-variables {"a" (str cluster)} simulation-count)]
+            samples (repeatedly simulation-count #(gpm/simulate gpm-mmix all-variables {"a" (str cluster)} ))]
         (doseq [variable variables]
           (cond (spec/numerical? multi-mixture variable)
                 (let [samples (utils/col variable samples)]
@@ -270,7 +266,7 @@
     (testing (str "Conditioned on point P" point-id)
       (let [point (stringify-keys (test-point point-id))
             all-variables (keys (:vars multi-mixture))
-            samples (gpm/simulate gpm-mmix all-variables point simulation-count)]
+            samples (take simulation-count (repeatedly #(gpm/simulate gpm-mmix all-variables point)))]
         (testing "validate cluster assignments/categorical distribution"
           (let [samples-a          (utils/column-subset samples ["a"])
                 cluster-p-fraction (utils/probability-for-categories samples-a (map str (range 6)))
@@ -379,5 +375,5 @@
                 :views [[{:probability 1.0
                           :parameters {:x {:mu 0 :sigma 1}
                                        :y {:mu 5 :sigma 2}}}]]})]
-    (doseq [sample (gpm/simulate model variables {} 10)]
+    (doseq [sample (repeatedly 10 #(gpm/simulate model variables {}))]
       (is (= variables (set (keys sample)))))))

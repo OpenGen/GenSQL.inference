@@ -40,23 +40,18 @@
                        (+ logp view-logp)))
                    0
                    views))))
-  (simulate [this targets constraints n-samples]
+  (simulate [this targets constraints]
     (let [[_ _ intersection] (diff (set targets) (set (keys constraints)))]
       (if (not-empty intersection)
         (throw (ex-info (str "Targets and constraints must be unique! "
                              "These are shared: "
                              (seq intersection))
                         {:targets targets :constraints constraints}))
-        (repeatedly n-samples
-                    #(->> views
-                          (map (fn [[_ view]]
-                                 ;; Currently calls a function with n-samples = 1.
-                                 ;; This should be addressed in the future with perhaps
-                                 ;; an implementation of simulate that doesn't take
-                                 ;; an `n-samples` argument.
-                                 (gpm.proto/simulate view targets constraints 1)))
-                          (filter not-empty)
-                          (apply merge))))))
+        (->> views
+             (map (fn [[_ view]]
+                    (gpm.proto/simulate view targets constraints)))
+             (filter not-empty)
+             (apply merge)))))
   gpm.proto/Incorporate
   (incorporate [this x]
     (let [row-id (gensym)]

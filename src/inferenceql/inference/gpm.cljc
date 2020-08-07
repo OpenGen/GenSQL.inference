@@ -100,7 +100,6 @@
   (gpm-proto/mutual-information gpm target-a target-b constraints n-samples))
 
 (defn simulate
-  "Given a GPM, simulates `n-samples` samples of the variables in `targets`,
-  given `constraints`."
-  [gpm targets constraints n-samples]
-  (gpm-proto/simulate gpm targets constraints n-samples))
+  "Given a GPM, simulates a sample of the variables in `targets` given `constraints`."
+  [gpm targets constraints]
+  (gpm-proto/simulate gpm targets constraints))

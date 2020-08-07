@@ -138,7 +138,8 @@
         ;;                = 0.619047619
         bernoulli-mean 0.619047619
         bernoulli-emp-mean (double (utils/average (map (fn [sample] (if sample 1 0))
-                                                       (flatten (gpm.proto/simulate column-bernoulli ["flip"] {} n-samples-bernoulli)))))
+                                                       (repeatedly n-samples-bernoulli
+                                                                   #(gpm.proto/simulate column-bernoulli ["flip"] {})))))
 
         n-samples-categorical 1000
         ;; alpha-red-mean = 4/7 * 6/10 + 2/7 * 2/8 + 1/7 * 1/3 = 0.4619047619
@@ -149,7 +150,7 @@
         categorical-emp-dist (reduce-kv (fn [m k v]
                                           (assoc m k (double (/ v n-samples-categorical))))
                                         {}
-                                        (frequencies (flatten (gpm.proto/simulate column-categorical ["color"] {} n-samples-categorical))))
+                                        (frequencies (repeatedly n-samples-categorical #(gpm.proto/simulate column-categorical ["color"] {}))))
 
         n-samples-gaussian 1000
         gaussian-threshold 0.5
@@ -158,7 +159,7 @@
         ;; mu-aux = (r * m) / r = 0
         ;; mean-mu = 4/7 * 4.4 + 2/7 * 2.6666666667 + 1/7 * 0 = 3.2761904762
         gaussian-mean 3.2761904762
-        gaussian-emp-mean (double (utils/average (flatten (gpm.proto/simulate column-gaussian ["height"] {} n-samples-gaussian))))]
+        gaussian-emp-mean (double (utils/average (repeatedly n-samples-gaussian #(gpm.proto/simulate column-gaussian ["height"] {}))))]
     (is (utils/almost-equal? bernoulli-emp-mean bernoulli-mean absolute-difference threshold))
     (is (utils/almost-equal-maps? categorical-dist categorical-emp-dist absolute-difference threshold))
     (is (utils/almost-equal? gaussian-emp-mean gaussian-mean absolute-difference gaussian-threshold))))

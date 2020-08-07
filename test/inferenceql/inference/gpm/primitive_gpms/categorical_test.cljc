@@ -19,11 +19,11 @@
     (is (= ##-Inf (gpm.proto/logpdf categorical-pgpm targets constraints)))))
 
 (deftest simulate
-  (let [n 100000
-        error-margin 0.01
+  (let [n 10000
+        error-margin 0.1
         targets []
         constraints {}
-        samples (frequencies (gpm.proto/simulate categorical-pgpm targets constraints n))]
+        samples (frequencies (repeatedly n #(gpm.proto/simulate categorical-pgpm targets constraints)))]
     (is (every? identity (mapv (fn [k] (< (utils/abs (- (/ (get samples k) n)
                                                         (/ 1 3)))
                                           error-margin))

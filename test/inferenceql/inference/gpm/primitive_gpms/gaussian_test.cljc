@@ -20,7 +20,7 @@
     (is (= ##-Inf (gpm.proto/logpdf gaussian-pgpm targets constraints)))))
 
 (deftest simulate
-  (let [n 100000
+  (let [n 10000
         targets []
         constraints {}
         incorporated-value 5
@@ -30,7 +30,7 @@
                                    (gpm.proto/incorporate {"gaussian" incorporated-value})
                                    (gpm.proto/incorporate {"gaussian" incorporated-value})
                                    (gpm.proto/incorporate {"gaussian" incorporated-value}))
-        average (/ (reduce + (gpm.proto/simulate gaussian-pgpm-simulate targets constraints n))
+        average (/ (reduce + (repeatedly n #(gpm.proto/simulate gaussian-pgpm-simulate targets constraints)))
                    n)]
     (is (< 4 average 5))))
 

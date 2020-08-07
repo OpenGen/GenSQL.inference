@@ -66,14 +66,14 @@
           (+ (* -0.5 (+ (Math/log 2) (Math/log Math/PI)))
                         z''
                        (* -1 z'))))))
-  (simulate [this targets constraints n-samples]
+  (simulate [this targets constraints]
     (let [[m-n r-n s-n nu-n] (posterior-hypers (:n suff-stats)
                                                (:sum-x suff-stats)
                                                (:sum-x-sq suff-stats)
-                                               hyperparameters)]
-    (repeatedly n-samples #(let [rho (primitives/simulate :gamma {:k (/ nu-n 2) :theta (/ 2 s-n)})
-                                 mu (primitives/simulate :gaussian {:mu m-n :sigma (/ 1 (Math/pow (* rho r-n) 0.5))})]
-      (primitives/simulate :gaussian {:mu mu :sigma (/ 1 rho)})))))
+                                               hyperparameters)
+          rho (primitives/simulate :gamma {:k (/ nu-n 2) :theta (/ 2 s-n)})
+          mu (primitives/simulate :gaussian {:mu m-n :sigma (/ 1 (Math/pow (* rho r-n) 0.5))})]
+      (primitives/simulate :gaussian {:mu mu :sigma (/ 1 rho)})))
 
   gpm.proto/Incorporate
   (incorporate [this values]

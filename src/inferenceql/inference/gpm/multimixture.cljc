@@ -29,23 +29,20 @@
                                weight))]
       (- log-weight-numer log-weight-denom)))
 
-  (simulate [this targets constraints n-samples]
+  (simulate [this targets constraints]
     (let [constraint-addrs-vals (mmix.utils/with-row-values {} constraints)
           generative-model      (mmix.utils/optimized-row-generator this)
-          gen-fn                #(let [[sample _ _] (mp/infer-and-score :procedure generative-model
-                                                                        :observation-trace constraint-addrs-vals)]
-                                   (select-keys sample targets))]
-      (take n-samples (repeatedly gen-fn))))
+          [sample _ _] (mp/infer-and-score :procedure generative-model :observation-trace constraint-addrs-vals)]
+      (select-keys sample targets)))
 
   (mutual-information [this target-a target-b constraints n-samples]
     (let [joint-target (into target-a target-b)
-          samples (gpm-proto/simulate
-                   this
-                   (cond-> joint-target
-                     (vector? constraints)
-                     (into constraints))
-                   constraints
-                   n-samples)
+          samples (repeatedly n-samples #(gpm-proto/simulate
+                                          this
+                                          (cond-> joint-target
+                                            (vector? constraints)
+                                            (into constraints))
+                                          constraints))
           constraint (if (map? constraints)
                        (repeat n-samples constraints)
                        (map #(select-keys % constraints)
