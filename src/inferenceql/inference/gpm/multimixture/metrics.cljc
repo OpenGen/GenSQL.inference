@@ -1,5 +1,5 @@
 (ns inferenceql.inference.gpm.multimixture.metrics
-  (:require [inferenceql.inference.gpm.multimixture.multimixture :as mmix]))
+  (:require [inferenceql.inference.gpm.multimixture.utils :as utils]))
 
 (defn check-distribution-criteria
   "Checks basic assumptions about two distributions being compared.
@@ -51,7 +51,7 @@
     (+ (* 0.5 (kl-divergence p m)) (* 0.5 (kl-divergence q m)))))
 
 (defn generate-categorical-spec
-  "Generates a spec to be used by `mmix/row-generator` for a categorical variable of name
+  "Generates a spec to be used by `utils/row-generator` for a categorical variable of name
   `var-name` and probabilities `ps`."
   [var-name ps]
   (check-distribution-criteria ps)
@@ -63,11 +63,11 @@
   "Generates `n` samples from a categorical distribution specified probabilities `ps`.
   If `ps` is a single float between 0 and 1, then it is assumed it's a binary distribution."
   [ps n & [var-name]]
-  ; Accounts for binary case.
+  ;; Accounts for binary case.
   (let [var (or var-name "x")
         ps (if (vector? ps) ps [ps (- 1 ps)])
         spec (generate-categorical-spec var ps)
-        generator (mmix/row-generator spec)
+        generator (utils/row-generator spec)
         data (repeatedly n generator)]
     (doall (map #(get % var) data))))
 
