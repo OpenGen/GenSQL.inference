@@ -1,7 +1,6 @@
 (ns inferenceql.inference.gpm.multimixture.metrics-viz
   (:require [clojure.string :refer [split]]
-            [inferenceql.inference.gpm.multimixture.metrics :as metrics]
-            [zane.vega.repl :refer [vega]]))
+            [inferenceql.inference.gpm.multimixture.metrics :as metrics]))
 
 (defmacro with-out-str-data-time-map
   "Returns time and data of an expression of the form `(time expression)`
@@ -138,14 +137,3 @@
                            :color {:field :metric-title
                                    :type "nominal"
                                    :legend nil}}}]}))
-
-
-(defn generate-metrics-viz
-  ([metric dist n-range title]
-   (let [spec (generate-metrics-spec metric dist n-range title)]
-     (vega spec))))
-
-(defn generate-aggregate-metrics-viz
-  [dist-1 dist-2 n-range title]
-  (let [spec (generate-aggregate-spec dist-1 dist-2 n-range title)]
-    (vega spec)))
