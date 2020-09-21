@@ -73,7 +73,7 @@
                                                hyperparameters)
           rho (primitives/simulate :gamma {:k (/ nu-n 2) :theta (/ 2 s-n)})
           mu (primitives/simulate :gaussian {:mu m-n :sigma (/ 1 (Math/pow (* rho r-n) 0.5))})]
-      (primitives/simulate :gaussian {:mu mu :sigma (/ 1 rho)})))
+      (primitives/simulate :gaussian {:mu mu :sigma (Math/pow rho -0.5)})))
 
   gpm.proto/Incorporate
   (incorporate [this values]
