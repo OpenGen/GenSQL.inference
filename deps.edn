@@ -1,11 +1,11 @@
-{:deps {clj-http {:mvn/version "3.10.1"}
+{:deps {clj-http/clj-http {:mvn/version "3.10.1"}
         metosin/jsonista {:mvn/version "0.2.6"}
         org.clojure/clojurescript {:mvn/version "1.10.520"}
         org.apache.commons/commons-math3 {:mvn/version "3.6.1"}
         probcomp/metaprob {:git/url "https://github.com/probcomp/metaprob.git"
                            :sha "8dc9d09f747c1e29886bb9628a0110c6f6bc6f5a"}}
  :aliases {:test {:extra-paths ["test"]
-                  :extra-deps {cheshire {:mvn/version "5.8.1"}
-                               expound {:mvn/version "0.7.2"}
+                  :extra-deps {cheshire/cheshire {:mvn/version "5.8.1"}
+                               expound/expound {:mvn/version "0.7.2"}
                                lambdaisland/kaocha {:mvn/version "1.0-612"}
                                lambdaisland/kaocha-cljs {:mvn/version "0.0-71"}}}}}
