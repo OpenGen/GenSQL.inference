@@ -27,7 +27,7 @@
                                        {})))
                          {})
                  (assoc {} :p))]
-    (primitives/simulate :log-categorical p)))
+      (primitives/simulate :log-categorical p)))
 
   gpm.proto/Incorporate
   (incorporate [this values]
@@ -51,8 +51,8 @@
           alpha (:alpha hyperparameters)
           a (* k alpha)
           lg (reduce +
-               (map (fn [v] (primitives/gammaln (+ v alpha)))
-                    (vals counts)))]
+                     (map (fn [v] (primitives/gammaln (+ v alpha)))
+                          (vals counts)))]
       (+ (primitives/gammaln a)
          (- (primitives/gammaln (+ a n)))
          lg
@@ -81,3 +81,15 @@
                       suff-stats)
         hyperparameters' (if-not (nil? hyperparameters) hyperparameters {:alpha 1})]
     (->Categorical var-name suff-stats' hyperparameters')))
+
+(defn export
+  "Exports a Categorical pGPM to a Multimixture spec."
+  [categorical]
+  (let [counts (-> categorical :suff-stats :counts)
+        n (-> categorical :suff-stats :n)
+        alpha (-> categorical :hyperparameters :alpha)
+        z (+ n (* (count counts) alpha))]
+    {(:var-name categorical) (reduce-kv (fn [p option cnt]
+                                          (assoc p option (double (/ (+ cnt alpha)  z))))
+                                        {}
+                                        counts)}))

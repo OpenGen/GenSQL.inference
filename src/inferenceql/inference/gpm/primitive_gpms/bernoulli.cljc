@@ -68,3 +68,12 @@
   (let [suff-stats' (if-not (nil? suff-stats) suff-stats {:n 0 :x-sum 0})
         hyperparameters' (if-not (nil? hyperparameters) hyperparameters {:alpha 0.5 :beta 0.5})]
     (->Bernoulli var-name suff-stats' hyperparameters')))
+
+(defn export
+  "Exports a Bernoulli pGPM to a Multimixture spec."
+  [bernoulli]
+  (let [x-sum (-> bernoulli :suff-stats :x-sum)
+        n (-> bernoulli :suff-stats :n)
+        alpha' (+ (-> bernoulli :hyperparameters :alpha) x-sum)
+        beta' (+ (-> bernoulli :hyperparameters :beta) n (* -1 x-sum))]
+    {(:var-name bernoulli) {:p (double (/ alpha' (+ alpha' beta')))}}))

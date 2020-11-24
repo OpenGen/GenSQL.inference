@@ -63,9 +63,9 @@
                                                        hyperparameters)
                     z' (calc-z r' s' nu')
                     z'' (calc-z r'' s'' nu'')]
-          (+ (* -0.5 (+ (Math/log 2) (Math/log Math/PI)))
-                        z''
-                       (* -1 z'))))))
+                (+ (* -0.5 (+ (Math/log 2) (Math/log Math/PI)))
+                   z''
+                   (* -1 z'))))))
   (simulate [this targets constraints]
     (let [[m-n r-n s-n nu-n] (posterior-hypers (:n suff-stats)
                                                (:sum-x suff-stats)
@@ -133,3 +133,9 @@
   (let [suff-stats' (if-not (nil? suff-stats) suff-stats {:n 0 :sum-x 0 :sum-x-sq 0})
         hyperparameters' (if-not (nil? hyperparameters) hyperparameters {:m 0 :r 1 :s 1 :nu 1})]
     (->Gaussian var-name suff-stats' hyperparameters')))
+
+(defn export
+  "Exports a Gaussian pGPM to a Multimixture spec."
+  [gaussian]
+  (let [samples (repeatedly 1000 #(gpm.proto/simulate gaussian [(:var-name gaussian)] {}))]
+    {(:var-name gaussian) {:mu (utils/average samples) :sigma (utils/std samples)}}))

@@ -15,10 +15,10 @@
   ([columns targets]
    (column-logpdfs columns targets {:add-aux false}))
   ([columns targets {:keys [add-aux]}]
-    (->> targets
-         (map (fn [[var-name target]]
-                (column/category-logpdfs (get columns var-name) {var-name target} {:add-aux add-aux})))
-         (apply merge-with + {}))))
+   (->> targets
+        (map (fn [[var-name target]]
+               (column/category-logpdfs (get columns var-name) {var-name target} {:add-aux add-aux})))
+        (apply merge-with + {}))))
 
 (defn add-aux-categories
   "Add m auxiliary categories to the given view."
@@ -54,8 +54,8 @@
                   (update :columns (fn [col-dict]
                                      (reduce (fn [col-dict' var-name]
                                                (update-in col-dict' [var-name :categories]
-                                                                    dissoc
-                                                                    category-to-remove))
+                                                          dissoc
+                                                          category-to-remove))
                                              col-dict
                                              (keys col-dict)))))) ;; XXX: This feels gross but it works.
             view
@@ -81,10 +81,10 @@
        (update :columns #(reduce-kv (fn [columns' col-name column]
                                       (let [col-data {col-name (get values col-name)}]
                                         (assoc columns' col-name (column/crosscat-incorporate
-                                                                   column
-                                                                   col-data
-                                                                   category-key
-                                                                   row-id))))
+                                                                  column
+                                                                  col-data
+                                                                  category-key
+                                                                  row-id))))
                                     {}
                                     %)))))
 
@@ -127,9 +127,9 @@
 
 (defn incorporate-by-rowid
   [gpm values row-id]
-    (let [category-key (primitives/crp-simulate-counts {:alpha (-> gpm :latents :alpha)
-                                                        :counts (-> gpm :latents :counts)})]
-      (incorporate-into-category gpm values category-key row-id)))
+  (let [category-key (primitives/crp-simulate-counts {:alpha (-> gpm :latents :alpha)
+                                                      :counts (-> gpm :latents :counts)})]
+    (incorporate-into-category gpm values category-key row-id)))
 
 (defn update-hyper-grids
   "doc-string"
@@ -358,6 +358,19 @@
         options (:options spec)
         data {}]
     (construct-view-from-latents spec latents types data {:options options})))
+
+(defn construct-view-from-types
+  "Constructor of a View GPM, given a specification for variable types."
+  [types options]
+  (let [hypers (reduce-kv (fn [hypers' var-name var-type]
+                            (assoc hypers' var-name (case var-type
+                                                      :bernoulli {:alpha 0.5 :beta 0.5}
+                                                      :categorical {:alpha 1}
+                                                      :gaussian {:m 0 :r 1 :s 1 :nu 1})))
+                          {}
+                          types)
+        spec {:hypers hypers :options options}]
+    (construct-view-from-hypers spec types)))
 
 (defn view?
   "Checks if the given GPM is a View."

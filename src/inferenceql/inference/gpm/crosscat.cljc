@@ -9,21 +9,67 @@
 (defn update-hyper-grids
   "Given a collection of columns, updates the columns' respective hyper grids."
   [columns]
-    (reduce-kv (fn [acc col-name col]
-              (let [hyper-grid (pgpms/hyper-grid (:stattype col) (vals (:data col)))]
-                (-> acc
-                    (assoc col-name (-> col
-                                        (assoc :hyper-grid hyper-grid)
-                                        (column/update-hypers))))))
+  (reduce-kv (fn [acc col-name col]
+               (let [hyper-grid (pgpms/hyper-grid (:stattype col) (vals (:data col)))]
+                 (-> acc
+                     (assoc col-name (-> col
+                                         (assoc :hyper-grid hyper-grid)
+                                         (column/update-hypers))))))
+             {}
+             columns))
+
+(defn update-hyper-grids-xcat
+  "Given a collection of columns, updates the columns' respective hyper grids."
+  [xcat]
+  (update xcat :views (fn [views]
+                        (reduce-kv (fn [acc view-name view]
+                                     (assoc acc view-name (update view
+                                                                  :columns
+                                                                  update-hyper-grids)))
+                                   {}
+                                   views))))
+
+(defn get-data
+  "Grabs data from xcat by row-id."
+  [xcat row-id]
+  (reduce-kv (fn [x _ view]
+               (merge x (view/get-data view row-id)))
+             {}
+             (:views xcat)))
+
+(defn calculate-weights
+  "Given an XCat GPM, for each row calculates the logpdf of the data contained in each row.
+  Used for search in ensembles."
+  [xcat]
+  (let [row-ids (-> xcat :views first second :latents :y keys)]
+    (reduce (fn [m row-id]
+              (let [row-data (into {} (filter (comp some? val) (get-data xcat row-id)))]
+                (assoc m row-id (gpm.proto/logpdf xcat row-data {}))))
             {}
-            columns))
+            row-ids)))
 
 (defn generate-view-latents
   "Given a CrossCat model, samples view assignments parameterized by the
   current concentration parameter value."
   [n alpha]
   (let [[_ assignments] (primitives/crp-simulate n {:alpha alpha})]
-        (zipmap (range) (shuffle assignments))))
+    (zipmap (range) (shuffle assignments))))
+
+(defn incorporate-by-rowid
+  "Given an XCat GPM, a map of values, and a row-id, incorporates
+  the values into the GPM under the given row-id."
+  [xcat values row-id]
+  (-> xcat
+      ((fn [gpm]
+         ;; Incorporate correct variables within the datumn into their respective views.
+         (reduce-kv (fn [m view-idx view]
+                      (let [view-vars (keys (:columns view))
+                            x-view (select-keys values view-vars)]
+                        (update-in m
+                                   [:views view-idx]
+                                   #(-> (view/incorporate-by-rowid % x-view row-id)))))
+                    gpm
+                    (:views xcat))))))
 
 (defrecord XCat [views latents]
   gpm.proto/GPM
@@ -55,16 +101,7 @@
   gpm.proto/Incorporate
   (incorporate [this x]
     (let [row-id (gensym)]
-      (-> this
-          ((fn [gpm]
-             ;; Incorporate correct variables within the datumn into their respective views.
-             (reduce-kv (fn [m view-idx view]
-                          (let [view-vars (keys (:columns view))
-                                x-view (select-keys x view-vars)]
-                            (update-in m [:views view-idx] #(-> (view/incorporate-by-rowid % x-view row-id)
-                                                                (update :columns update-hyper-grids)))))
-                        gpm
-                        views))))))
+      (incorporate-by-rowid this x row-id)))
   (unincorporate [this x]
     (-> this
         ((fn [xcat]
@@ -181,17 +218,17 @@
          views' (reduce-kv (fn [acc view-name view]
                              (let [view-vars (-> view :hypers keys)]
                                (assoc acc view-name (view/construct-view-from-latents
-                                                      view
-                                                      (get-in latents [:local view-name])
-                                                      types
-                                                      ;; Need to filter each datum for view-specific
-                                                      ;; variables in order to avoid error.
-                                                      (reduce-kv (fn [data' row-id datum]
-                                                                   (assoc data' row-id (select-keys datum view-vars)))
-                                                                 {}
-                                                                 data)
-                                                      {:options options
-                                                       :crosscat true}))))
+                                                     view
+                                                     (get-in latents [:local view-name])
+                                                     types
+                                                     ;; Need to filter each datum for view-specific
+                                                     ;; variables in order to avoid error.
+                                                     (reduce-kv (fn [data' row-id datum]
+                                                                  (assoc data' row-id (select-keys datum view-vars)))
+                                                                {}
+                                                                data)
+                                                     {:options options
+                                                      :crosscat true}))))
                            {}
                            views)
          ;; Create unordered (bag) for latent counts and column view assignments.
@@ -220,6 +257,64 @@
         options (:options spec)
         data {}]
     (construct-xcat-from-latents spec latents data {:options options})))
+
+(defn construct-xcat-from-types
+  "Constructor of a XCat GPM, given a specification for variable types, wherein all
+  variables are placed into the same view initially."
+  [types options]
+  (let [hypers (reduce-kv (fn [hypers' var-name var-type]
+                            (assoc hypers' var-name (case var-type
+                                                      :bernoulli {:alpha 0.5 :beta 0.5}
+                                                      :categorical {:alpha 1}
+                                                      :gaussian {:m 0 :r 1 :s 1 :nu 1})))
+                          {}
+                          types)
+        spec {:views {0 {:hypers hypers}}
+              :types types
+              :options options}]
+    (construct-xcat-from-hypers spec)))
+
+(defn xcat->mmix
+  "Converts a specified XCat GPM into a Multimixture spec."
+  [xcat]
+  (let [views (:views xcat)
+        [vars views]
+        (reduce-kv (fn [[vars views] _ view]
+                     ;; For each view, record the type of each column,
+                     ;; and convert each category into a Multimixture spec representation.
+                     (let [view-latents (:latents view)
+                           view-counts (:counts view-latents)
+                           view-variables (reduce-kv (fn [var-types col-name column]
+                                                       (assoc var-types col-name (:stattype column)))
+                                                     {}
+                                                     (:columns view))
+                           z (reduce + (vals view-counts))
+                           category-names (keys view-counts)
+                           categories (reduce (fn [categories category-name]
+                                                (let [;; The prior of the category is proportional to its size.
+                                                      category-weight (double (/ (get view-counts category-name) z))
+                                                      category
+                                                      (reduce-kv (fn [column-categories _ column]
+                                                                   (let [;; If there is no category for a given column, this means
+                                                                         ;; that there is no associated data with that column in the rows within
+                                                                         ;; that category. Because the types are collapsed, we can generate
+                                                                         ;; a new (empty) category for that column.
+                                                                         col-cat (get-in column [:categories category-name] (column/generate-category column))
+                                                                         col-stattype (:stattype column)]
+                                                                     (merge column-categories
+                                                                            (pgpms/export-category col-stattype col-cat))))
+                                                                 {}
+                                                                 (:columns view))]
+                                                  (conj categories {:probability category-weight
+                                                                    :parameters category})))
+                                              []
+                                              category-names)]
+                       [(merge vars view-variables)
+                        (conj views categories)]))
+                   [{} []]
+                   views)]
+    {:vars vars
+     :views views}))
 
 (defn xcat?
   "Checks if the given GPM is an XCat GPM."

@@ -1,5 +1,7 @@
 {:deps {clj-http/clj-http {:mvn/version "3.10.1"}
         metosin/jsonista {:mvn/version "0.2.6"}
+        progrock {:mvn/version "0.1.2"}
+        org.clojure/data.csv {:mvn/version "1.0.0"}
         org.clojure/clojurescript {:mvn/version "1.10.520"}
         org.apache.commons/commons-math3 {:mvn/version "3.6.1"}
         probcomp/metaprob {:git/url "https://github.com/probcomp/metaprob.git"

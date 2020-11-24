@@ -1,26 +1,37 @@
 (ns inferenceql.inference.inference
-  (:require [inferenceql.inference.kernels.category :as category]
+  (:require [progrock.core :as prog]
+            [inferenceql.inference.gpm.view :as view]
+            [inferenceql.inference.gpm.crosscat :as xcat]
+            [inferenceql.inference.kernels.category :as category]
             [inferenceql.inference.kernels.hyperparameters :as col-hypers]
             [inferenceql.inference.kernels.concentration-hypers :as conc-hypers]
-            [inferenceql.inference.kernels.view :as view]))
+            [inferenceql.inference.kernels.view :as k.view]))
 
-(defn infer-dpmm
-  [gpm n]
-  (reduce (fn [gpm' _]
-            (-> gpm'
-                category/infer
-                col-hypers/infer
-                conc-hypers/infer))
-          gpm
-          (range n)))
+(defn pr-status-bar
+  [bar]
+  (prog/print bar {:format ":progress/:total  :percent% [:bar] ETA: :remaining, Elapsed: :elapsed"}))
 
-(defn infer-xcat
-  [gpm n]
-  (reduce (fn [gpm' _]
-            (-> gpm'
-                category/infer
-                col-hypers/infer
-                conc-hypers/infer
-                view/infer))
-          gpm
-          (range n)))
+(defn infer
+  ([gpm n]
+   (infer gpm n (prog/progress-bar n)))
+  ([gpm n bar]
+   (assert (or (view/view? gpm)
+               (xcat/xcat? gpm))
+           (str "GPM must either be View or XCat: " (type gpm)))
+   (pr-status-bar bar)
+   (let [[final-gpm final-bar] (reduce (fn [[gpm' bar'] _]
+                                         (let [inferred (-> gpm'
+                                                            category/infer
+                                                            col-hypers/infer
+                                                            conc-hypers/infer
+                                                            (#(if (xcat/xcat? %)
+                                                                (k.view/infer %)
+                                                                %)))
+                                               new-bar (prog/tick bar')]
+                                           (pr-status-bar new-bar)
+                                           [inferred
+                                            new-bar]))
+                                       [gpm bar]
+                                       (range n))]
+     (pr-status-bar (prog/done final-bar))
+     final-gpm)))

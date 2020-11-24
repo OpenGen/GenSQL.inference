@@ -20,7 +20,16 @@
       :categorical (categorical/hyper-grid data n-grid)
       :gaussian (gaussian/hyper-grid data n-grid)
       (throw (ex-info (str "pGPM doesn't exist: " stattype)
-                     {:stattype stattype :data data})))))
+                      {:stattype stattype :data data})))))
+
+(defn export-category
+  [stattype category]
+  (case stattype
+    :bernoulli (bernoulli/export category)
+    :categorical (categorical/export category)
+    :gaussian (gaussian/export category)
+    (throw (ex-info (str "pGPM doesn't exist: " stattype)
+                    {:stattype stattype}))))
 
 (defn ->pGPM
   "Cast a spec to the specified pGPM.
@@ -31,4 +40,4 @@
     :categorical (categorical/spec->categorical var-name :suff-stats suff-stats :hyperparameters hyperparameters :options options)
     :gaussian (gaussian/spec->gaussian var-name :suff-stats suff-stats :hyperparameters hyperparameters)
     (throw (ex-info (str "pGPM doesn't exist for var-name: " primitive " for " var-name)
-                   {:primitive primitive}))))
+                    {:primitive primitive}))))

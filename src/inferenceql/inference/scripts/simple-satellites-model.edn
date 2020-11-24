@@ -1,0 +1,4 @@
+{:null-character ""
+ :ignore-columns ["geo_orbit" "military"]
+ :model :dpmm
+ :n-infer-iters 10}
