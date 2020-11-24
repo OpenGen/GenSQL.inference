@@ -1,5 +1,5 @@
 (ns inferenceql.inference.gpm.crosscat
-  (:require [clojure.data :refer [diff]]
+  (:require [clojure.set :as set]
             [inferenceql.inference.gpm.view :as view]
             [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.primitive-gpms :as pgpms]
@@ -28,7 +28,7 @@
 (defrecord XCat [views latents]
   gpm.proto/GPM
   (logpdf [this targets constraints]
-    (let [[_ _ intersection] (diff (set (keys targets)) (set (keys constraints)))]
+    (let [intersection (set/intersection (set (keys targets)) (set (keys constraints)))]
       (if (not-empty intersection)
         (throw (ex-info (str "Targets and constraints must be unique! "
                              "These are shared: "
@@ -41,7 +41,7 @@
                    0
                    views))))
   (simulate [this targets constraints]
-    (let [[_ _ intersection] (diff (set targets) (set (keys constraints)))]
+    (let [intersection (set/intersection (set targets) (set (keys constraints)))]
       (if (not-empty intersection)
         (throw (ex-info (str "Targets and constraints must be unique! "
                              "These are shared: "
