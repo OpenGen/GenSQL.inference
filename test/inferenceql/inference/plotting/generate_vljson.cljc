@@ -1,11 +1,11 @@
 (ns inferenceql.inference.plotting.generate-vljson
-  (:require [cheshire.core :as cheshire]))
+  (:require [jsonista.core :as json]))
 
 (defn scatter-plot-json
   [columns values test-points domain title]
     (let [color (if (contains? (first values) "a") {:field "a" :type "nominal"} {})
           shape (if (contains? (first values) "b") {:field "b" :type "nominal"} {})]
-    (cheshire/generate-string
+    (json/write-value-as-string
       {:$schema "https://vega.github.io/schema/vega-lite/v3.json"
        :background "white"
        :data {:values (into values test-points)}
@@ -47,7 +47,7 @@
   [samples title n]
     (let [get-counts (fn [item] {"category" (first (vals (first item)))
                                  "probability" (float (/ (second item) n))})]
-      (cheshire/generate-string
+      (json/write-value-as-string
         {:$schema "https://vega.github.io/schema/vega-lite/v3.json"
          :background "white"
          :data {:values (map get-counts (frequencies samples))}
@@ -63,7 +63,7 @@
 (defn hist-plot
   [samples columns title]
     (let [xlabel (str (first columns) " (binned) ")]
-      (cheshire/generate-string
+      (json/write-value-as-string
         {:$schema "https://vega.github.io/schema/vega-lite/v3.json"
          :background "white"
          :data {:values  samples}
