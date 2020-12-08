@@ -2,6 +2,7 @@
   (:require [clojure.string :refer [lower-case]]
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
+            [clojure.walk :as walk]
             [inferenceql.inference.gpm.view :as view]
             [inferenceql.inference.gpm.crosscat :as xcat]))
 
@@ -56,7 +57,8 @@
       (csv/read-csv)
       (csv-data->maps)
       (clean-data null-character)
-      (#(apply filter-variables % ignore-columns))))
+      (#(apply filter-variables % ignore-columns))
+      (walk/keywordize-keys)))
 
 (defn infer-type
   "Given the set of unique data from a particular column,
