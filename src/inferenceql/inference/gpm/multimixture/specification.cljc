@@ -204,3 +204,8 @@
                             {}
                             (get parameters variable))))
           (apply merge-with +)))))
+
+(defn spec?
+  "Returns true if `x` is a valid multimixture specification."
+  [x]
+  (s/valid? ::multi-mixture x))

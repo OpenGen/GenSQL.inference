@@ -2,14 +2,10 @@
   (:require [clojure.java.io :as io]
             [clojure.data.json :as json]
             [clojure.set]
-            [clojure.edn :as edn]
             [inferenceql.inference.utils :as utils]
+            [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.crosscat :as xcat]
-            [inferenceql.inference.gpm.view :as view]
-            [inferenceql.inference.gpm.column :as column]
-            [inferenceql.inference.gpm.primitive-gpms.bernoulli :as bernoulli]
-            [inferenceql.inference.gpm.primitive-gpms.categorical :as categorical]
-            [inferenceql.inference.gpm.primitive-gpms.gaussian :as gaussian]))
+            [inferenceql.inference.gpm.view :as view]))
 
 (defn dpmm-gen-fn
   "Given types, options, and training data for a DPMM model,
@@ -155,23 +151,14 @@
      :target-predicate target-predicate
      :constraint-predicate composite-predicate}))
 
-(defn load-model
-  "Given a .edn file containing a GPM, loads the GPM into ClojureCat."
-  [file]
-  (edn/read-string {:readers {'inferenceql.inference.gpm.crosscat.XCat xcat/map->XCat
-                              'inferenceql.inference.gpm.view.View view/map->View
-                              'inferenceql.inference.gpm.column.Column column/map->Column
-                              'inferenceql.inference.gpm.primitive_gpms.bernoulli.Bernoulli bernoulli/map->Bernoulli
-                              'inferenceql.inference.gpm.primitive_gpms.categorical.Categorical categorical/map->Categorical
-                              'inferenceql.inference.gpm.primitive_gpms.gaussian.Gaussian gaussian/map->Gaussian}}
-                   (slurp file)))
-
 (defn load-ensemble
-  "Given a directory containing .edn files, each with a different GPM
-  of the same type for the same data, loads the ensemble into ClojureCat."
+  "Given a directory containing .edn files, each with a different GPM of the
+  same type for the same data, loads the ensemble into ClojureCat."
   [dir]
-  (let [files (rest (file-seq dir))]
-    (mapv (comp load-model #(.getAbsolutePath %)) files)))
+  (into []
+        (comp (map slurp)
+              (map gpm/read-string))
+        (.listFiles (io/as-file dir))))
 
 (defn write-ensemble
   "Given a file base destination, writes an ensemble of GPMs to file, with

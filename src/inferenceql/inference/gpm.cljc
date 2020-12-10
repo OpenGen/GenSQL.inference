@@ -1,9 +1,16 @@
 (ns inferenceql.inference.gpm
-  (:require [inferenceql.inference.gpm.multimixture :as mmix]
+  (:refer-clojure :exclude [read read-string])
+  (:require [clojure.edn :as edn]
+            [inferenceql.inference.gpm.multimixture :as mmix]
+            [inferenceql.inference.gpm.multimixture.specification :as mmix.spec]
             #?(:clj [inferenceql.inference.gpm.http :as http])
             [inferenceql.inference.gpm.proto :as gpm-proto]
             [inferenceql.inference.gpm.column :as column]
-            [inferenceql.inference.gpm.view :as view]))
+            [inferenceql.inference.gpm.crosscat :as xcat]
+            [inferenceql.inference.gpm.view :as view]
+            [inferenceql.inference.gpm.primitive-gpms.bernoulli :as bernoulli]
+            [inferenceql.inference.gpm.primitive-gpms.categorical :as categorical]
+            [inferenceql.inference.gpm.primitive-gpms.gaussian :as gaussian]))
 
 #?(:clj
    (defn http
@@ -103,3 +110,40 @@
   "Given a GPM, simulates a sample of the variables in `targets` given `constraints`."
   [gpm targets constraints]
   (gpm-proto/simulate gpm targets constraints))
+
+(def readers
+  {'inferenceql.inference.gpm.crosscat.XCat xcat/map->XCat
+   'inferenceql.inference.gpm.view.View view/map->View
+   'inferenceql.inference.gpm.column.Column column/map->Column
+   'inferenceql.inference.gpm.primitive_gpms.bernoulli.Bernoulli bernoulli/map->Bernoulli
+   'inferenceql.inference.gpm.primitive_gpms.categorical.Categorical categorical/map->Categorical
+   'inferenceql.inference.gpm.primitive_gpms.gaussian.Gaussian gaussian/map->Gaussian})
+
+(defn as-gpm
+  "Coerce argument to a value that implements `gpm-proto.GPM`."
+  [x]
+  (let [url? #(re-find #"^https?://" %)]
+    (cond (satisfies? gpm-proto/GPM x) x
+          (mmix.spec/spec? x) (Multimixture x)
+          (url? x) (http x)
+          :else (throw (ex-info "Cannot coerce value to GPM" {:value x})))))
+
+(defn read
+  "Like `clojure.edn/read` but includes readers for records in
+  `inferneceql.inference`."
+  ([stream]
+   (read {} stream))
+  ([opts stream]
+   (as-gpm
+    (edn/read (update opts :readers merge readers)
+              stream))))
+
+(defn read-string
+  "Like `clojure.edn/read-string` but includes readers for records from
+  `inferenceql.inference`."
+  ([s]
+   (read-string {} s))
+  ([opts s]
+   (as-gpm
+    (edn/read-string (update opts :readers merge readers)
+                     s))))
