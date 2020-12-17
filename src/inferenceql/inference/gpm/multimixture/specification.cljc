@@ -37,7 +37,7 @@
         ::categorical-parameters ::categorical-parameters
         ::gaussian-parameters    ::gaussian-parameters))
 
-(s/def ::column string?)
+(s/def ::column keyword?)
 
 (s/def ::row (s/map-of ::column any?))
 
@@ -125,7 +125,7 @@
   "Returns the index of the view a given variable was assigned to."
   [mmix variable]
   (some (fn [[i view]]
-          (when (contains? (view-variables view) (name variable))
+          (when (contains? (view-variables view) variable)
             i))
         (map-indexed vector (:views mmix))))
 
