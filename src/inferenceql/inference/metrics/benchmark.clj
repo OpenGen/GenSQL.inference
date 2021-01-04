@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.data.json :as json]
             [clojure.set]
+            [clojure.string :as string]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.crosscat :as xcat]
@@ -44,7 +45,7 @@
      (binding [*out* s#]
        (let [r# (time ~@body)]
          {:result r#
-          :time (Float/parseFloat (nth (split (str s#) #" ")
+          :time (Float/parseFloat (nth (string/split (str s#) #" ")
                                        2))}))))
 
 (defn time-execution
