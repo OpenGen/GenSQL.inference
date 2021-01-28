@@ -217,15 +217,20 @@
 (defrecord View [columns latents assignments]
   gpm.proto/GPM
   (logpdf [this targets constraints]
-    ;; To find the conditional probability of the targets given the constraints,
-    ;; we use standard Bayes' Rule.
-    ;;                             P(targets, constraints)   <-- joint
-    ;; P(targets | constraints) = -------------------------
-    ;;                                P(constraints)
-    ;; and in the log domain,
-    ;;
-    ;; logP(targets | constraints) = logP(targets, constraints) - logP(constraints)
-    (let [alpha (:alpha latents)
+    (let [modeled? (set (keys columns))
+          ;; Filtering targets and constaints for only those which are modeled.
+          targets (into {} (filter #(modeled? (key %)) targets))
+          constraints (into {} (filter #(modeled? (key %)) constraints))
+
+          ;; To find the conditional probability of the targets given the constraints,
+          ;; we use standard Bayes' Rule.
+          ;;                             P(targets, constraints)   <-- joint
+          ;; P(targets | constraints) = -------------------------
+          ;;                                P(constraints)
+          ;; and in the log domain,
+          ;;
+          ;; logP(targets | constraints) = logP(targets, constraints) - logP(constraints)
+          alpha (:alpha latents)
           crp-counts (assoc (:counts latents) :aux alpha)
           n (apply + (vals crp-counts))
           crp-weights (reduce-kv (fn [m k v]
@@ -240,40 +245,44 @@
           logp-constraints (utils/logsumexp (vals (merge-with + lls-constraints crp-weights)))]
       (- logp-joint logp-constraints)))
   (simulate [this targets constraints]
-    (if (nil? targets)
-      '()
-      (let [crp-counts (:counts latents)
-            n (apply + (vals crp-counts))
-            alpha (:alpha latents)
-            z (+ n alpha)
-            crp-weights (reduce-kv (fn [m k v]
-                                     (assoc m k (Math/log (/ v z))))
-                                   {:aux (Math/log (/ alpha z))}
-                                   crp-counts)
-            constraint-weights (if (empty? constraints)
-                                 {}
-                                 ;; If constraints aren't empty, you must re-weight
-                                 ;; based on logpdf of constrained columns, across
-                                 ;; all their categories.
-                                 (->> constraints
-                                      (map (fn [[constraint-var constraint-val]]
-                                             (let [column (get columns constraint-var)
-                                                   aux (column/generate-category column)]
-                                               ;; Find the logpdf of the constraint in each of each the categories,
-                                               ;; including the auxiliary one introduced by the CRP.
-                                               (merge (column/category-logpdfs column {constraint-var constraint-val})
-                                                      {:aux (gpm.proto/logpdf aux {constraint-var constraint-val} {})}))))
-                                      (apply merge-with + {})))
-            unnormalized-weights (merge-with + crp-weights constraint-weights)
-            weights (utils/log-normalize unnormalized-weights)
-            logps {:p weights}
-            ;; Sample a category assignment, then simulate a value from that category in each of
-            ;; the constituent columns.
-            category-idx (primitives/simulate :log-categorical logps)]
-        (->> targets
-             (map (fn [var-name]
-                    {var-name (column/crosscat-simulate (get columns var-name) category-idx)}))
-             (apply merge)))))
+    (let [modeled? (set (keys columns))
+          ;; Filtering targets and constaints for only those which are modeled.
+          targets (filter modeled? targets)
+          constraints (into {} (filter #(modeled? (key %)) constraints))]
+      (if (nil? targets)
+        '()
+        (let [crp-counts (:counts latents)
+              n (apply + (vals crp-counts))
+              alpha (:alpha latents)
+              z (+ n alpha)
+              crp-weights (reduce-kv (fn [m k v]
+                                       (assoc m k (Math/log (/ v z))))
+                                     {:aux (Math/log (/ alpha z))}
+                                     crp-counts)
+              constraint-weights (if (empty? constraints)
+                                   {}
+                                   ;; If constraints aren't empty, you must re-weight
+                                   ;; based on logpdf of constrained columns, across
+                                   ;; all their categories.
+                                   (->> constraints
+                                        (map (fn [[constraint-var constraint-val]]
+                                               (let [column (get columns constraint-var)
+                                                     aux (column/generate-category column)]
+                                                 ;; Find the logpdf of the constraint in each of each the categories,
+                                                 ;; including the auxiliary one introduced by the CRP.
+                                                 (merge (column/category-logpdfs column {constraint-var constraint-val})
+                                                        {:aux (gpm.proto/logpdf aux {constraint-var constraint-val} {})}))))
+                                        (apply merge-with + {})))
+              unnormalized-weights (merge-with + crp-weights constraint-weights)
+              weights (utils/log-normalize unnormalized-weights)
+              logps {:p weights}
+              ;; Sample a category assignment, then simulate a value from that category in each of
+              ;; the constituent columns.
+              category-idx (primitives/simulate :log-categorical logps)]
+          (->> targets
+               (map (fn [var-name]
+                      {var-name (column/crosscat-simulate (get columns var-name) category-idx)}))
+               (apply merge))))))
 
   gpm.proto/Incorporate
   (incorporate [this values]
