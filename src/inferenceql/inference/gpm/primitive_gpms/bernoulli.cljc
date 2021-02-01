@@ -26,12 +26,16 @@
   gpm.proto/Incorporate
   (incorporate [this values]
     (let [x (get values var-name)]
+      (assert (boolean? x)
+              "Only boolean values can be incorporated into a Bernoulli gpm.")
       (-> this
           (assoc :suff-stats (-> suff-stats
                                  (update :n inc)
                                  (update :x-sum #(+ % (if x 1 0))))))))
   (unincorporate [this values]
     (let [x (get values var-name)]
+      (assert (boolean? x)
+              "Only boolean values can be incorporated into a Bernoulli gpm.")
       (-> this
           (assoc :suff-stats (-> suff-stats
                                  (update :n dec)
