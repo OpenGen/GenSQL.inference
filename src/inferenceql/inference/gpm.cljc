@@ -95,6 +95,12 @@
   [gpm values]
   (gpm-proto/incorporate gpm values))
 
+(defn insert
+  "Given a non-parametric GPM and it's partition, insert a row into into the correct
+  category (aka the correct table/cluster)"
+  [gpm values]
+  (gpm-proto/insert gpm values))
+
 (defn logpdf
   "Given a GPM, calculates the logpdf of `targets` given `constraints`."
   [gpm targets constraints]

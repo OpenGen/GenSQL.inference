@@ -18,3 +18,8 @@
   of the current state of a GPM.
   Necessary for all CrossCat-related GPMs."
   (logpdf-score [this]))
+
+(defprotocol Insert
+  "Given a non-parametric GPM and it's partition, insert a row into into the correct
+  category (aka the correct table/cluster)"
+  (insert [this values]))

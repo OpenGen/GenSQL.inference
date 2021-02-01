@@ -8,6 +8,7 @@
             [inferenceql.inference.primitives :as primitives]
             [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.proto :as gpm.proto]
+            [inferenceql.inference.gpm.utils :as gpm.utils]
             [clojure.set]))
 
 (defn column-logpdfs
@@ -214,6 +215,52 @@
                                                      :row-ids (clojure.set/union (:row-ids a) (:row-ids b))})]
                                      (apply merge-with merge-fn assignments')))))))
 
+(defn infer-row-category-view
+  "Given a view and list of row-ids, infers the assignment of each row with both the
+  current categories in the view, as well as `m` specified auxiliary ones.
+  This is Algorithm 8 from http://www.stat.columbia.edu/npbayes/papers/neal_sampling.pdf"
+  ([view m]
+    (infer-row-category-view view m nil))
+  ([view m supplied-rowids]
+   (let [row-ids (shuffle (-> view :latents :y keys))
+         all-row-ids (nil? supplied-rowids)]
+      ;; For each row in the view:
+      ;; 1.) Remove the row from the current category.
+      ;; 2.) Calculate the logpdf of that row being generated
+      ;;     by each category and weight with CRP weighting.
+      ;; 3.) Sample new category assignment for row, and
+      ;;     update latents accordingly.
+      (reduce (fn [view' row-id]
+                (if (or all-row-ids (contains? supplied-rowids row-id))
+                  (let [row-data (get-data view' row-id)
+                        latents (:latents view')
+                        y (get-in latents [:y row-id])
+                        singleton? (= 1 (get-in latents [:counts y]))
+                        m (if singleton? (dec m) m)
+                        ;; Remove the current row from the model.
+                        view-minus (-> view'
+                                       (unincorporate-from-category row-data y row-id)
+                                       ;; Add auxiliary categories, if necessary. If y
+                                       ;; represents a singleton category and m is 1,
+                                       ;; then no new categories are added and y is treated
+                                       ;; like the auxiliary category (since it is now empty).
+                                       (add-aux-categories m))
+                        ;; Get logpdf that each category generated the datum.
+                        lls (-> view-minus
+                                (:columns)
+                                (column-logpdfs row-data))
+                        crp-weights (gpm.utils/crp-weights view-minus m)
+                        logps {:p (utils/log-normalize (merge-with + lls crp-weights))}
+                        y' (primitives/simulate :log-categorical logps)]
+                    (if (= y y')
+                      view'
+                      (-> view-minus
+                          (incorporate-into-category row-data y' row-id)
+                          (filter-empty-categories))))
+                  view'))
+                view
+                (seq row-ids)))))
+
 (defrecord View [columns latents assignments]
   gpm.proto/GPM
   (logpdf [this targets constraints]
@@ -293,6 +340,14 @@
     (let [categories (get-in this [:assignments values :categories])
           category-remove (rand-nth (filter #(not= :row-ids %) (keys categories)))]
       (unincorporate-from-category this values category-remove)))
+
+  gpm.proto/Insert
+  (insert [this values]
+    (let [category-key (primitives/crp-simulate-counts {:alpha (:alpha latents)
+                                                        :counts (:counts latents)})
+          row-id (gensym)
+          view' (incorporate-into-category this values category-key row-id)]
+      (infer-row-category-view view' 1 #{row-id})))
 
   gpm.proto/Score
   (logpdf-score [this]
