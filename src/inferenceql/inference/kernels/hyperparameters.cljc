@@ -62,12 +62,20 @@
                                   {}
                                   %)))
 
-(defn infer-column
+(defn infer-column-view
   "Conducts column hyperparameter inference on only the column of
   interest for a given View GPM."
   [column-name view]
   (update-in view [:columns column-name]
              #(infer-hyperparameters-column %)))
+
+(defn infer-column-xcat
+  "Conducts column hyperparameter inference on only the column of
+  interest for a given Crosscat GPM."
+  [column-name xcat]
+  (let [view-assignment (get-in xcat [:latents :z column-name])]
+    (update-in xcat [:views view-assignment :columns column-name]
+                    #(infer-hyperparameters-column %))))
 
 (defn infer
   "Conducts hyperparameter inference on a GPM.

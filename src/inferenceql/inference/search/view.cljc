@@ -41,7 +41,7 @@
                        {:crosscat true})]
     (->> binary-column
          (view/incorporate-column view)
-         (col-hypers/infer-column binary-name)
+         (col-hypers/infer-column-view binary-name)
          (generate-logpdfs binary-name)
          (apply merge)
          (sort-by second >))))
