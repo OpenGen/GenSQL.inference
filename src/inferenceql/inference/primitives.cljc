@@ -1,5 +1,6 @@
 (ns inferenceql.inference.primitives
-  (:require [inferenceql.inference.utils :as utils])
+  (:require [inferenceql.inference.utils :as utils]
+            #?(:cljs [inferenceql.inference.distributions :as dist]))
   #?(:clj (:import [org.apache.commons.math3.special Gamma])))
 
 (defn gammaln
@@ -8,7 +9,7 @@
   (if-not x
    0
    #?(:clj (Gamma/logGamma x)
-      :cljs (Math/log (utils/gamma x)))))
+      :cljs (dist/log-gamma x))))
 
 (defn betaln
   "Computes the natural log of the beta function.

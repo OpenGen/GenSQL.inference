@@ -5,12 +5,9 @@
             #?(:clj [incanter.distributions :as incanter.distributions])
             [inferenceql.inference.gpm.multimixture.specification :as spec]))
 
-;; https://rosettacode.org/wiki/Gamma_function#Clojure
-(s/fdef gamma
-  :args (s/cat :number pos?))
-
 (defn gamma
-  "Returns Gamma(z + 1 = number) using Lanczos approximation."
+  "Returns Gamma(z + 1 = number) using Lanczos approximation.
+  https://rosettacode.org/wiki/Gamma_function#Clojure"
   [number]
   (if (< number 0.5)
     (/ Math/PI (* (Math/sin (* Math/PI number))
@@ -24,6 +21,8 @@
          (Math/exp (- (+ n 7 0.5)))
          (+ (first c)
             (apply + (map-indexed #(/ %2 (+ n %1 1)) (next c))))))))
+
+(s/fdef gamma :args (s/cat :number pos?))
 
 (defn log-gamma
   "Returns Gamma(z + 1 = number) using Lanczos approximation."
@@ -53,7 +52,7 @@
           condition-1 (<= u (/ e (+ e k)))
           eps (if condition-1
                 (Math/pow v (/ 1 k))
-                (- 1 (Math/log v) ))
+                (- 1 (Math/log v)))
           n   (if condition-1
                 (* w (Math/pow eps (- k 1)))
                 (* w (Math/pow e (- 0 eps))))
