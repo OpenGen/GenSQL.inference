@@ -128,11 +128,12 @@
 (defn as-gpm
   "Coerce argument to a value that implements `gpm-proto.GPM`."
   [x]
-  (let [url? #(re-find #"^https?://" %)]
-    (cond (satisfies? gpm-proto/GPM x) x
-          (mmix.spec/spec? x) (Multimixture x)
-          (url? x) (http x)
-          :else (throw (ex-info "Cannot coerce value to GPM" {:value x})))))
+  (cond (satisfies? gpm-proto/GPM x) x
+        (mmix.spec/spec? x) (Multimixture x)
+        #?@(:clj [(let [url? #(re-find #"^https?://" %)]
+                    (url? x))
+                  (http x)])
+        :else (throw (ex-info "Cannot coerce value to GPM" {:value x}))))
 
 (defn read
   "Like `clojure.edn/read` but includes readers for records in
