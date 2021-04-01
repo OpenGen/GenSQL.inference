@@ -18,5 +18,17 @@ jobs:
         uses: actions/checkout@v2
       - name: Install ws
         run: npm install ws
+      - name: Cache m2
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: m2-${{ hashFiles('deps.edn') }}
+      - name: Cache gitlibs
+        uses: actions/cache@v2
+        with:
+          path: ~/.gitlibs
+          key: gitlibs-${{ hashFiles('deps.edn') }}
+      - name: Prepare dependencies
+        run: clojure -A:test -P
       - name: Run tests
         run: bin/kaocha --reporter documentation --plugin kaocha.plugin/profiling
