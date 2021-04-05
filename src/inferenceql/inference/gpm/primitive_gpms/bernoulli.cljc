@@ -49,7 +49,11 @@
           beta (:beta hyperparameters)]
       (- (primitives/betaln (+ alpha x-sum)
                             (+ n (- x-sum) beta))
-         (primitives/betaln alpha beta)))))
+         (primitives/betaln alpha beta))))
+
+  gpm.proto/Variables
+  (variables [{:keys [var-name]}]
+    #{var-name}))
 
 (defn bernoulli?
   "Checks if the given pGPM is Bernoulli."

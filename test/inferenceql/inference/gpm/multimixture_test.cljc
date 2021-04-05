@@ -375,3 +375,6 @@
                                        :y {:mu 5 :sigma 2}}}]]})]
     (doseq [sample (repeatedly 10 #(gpm/simulate model variables {}))]
       (is (= variables (set (keys sample)))))))
+
+(deftest get-variables
+  (is (= #{:x :y :z :a :b :c} (gpm/variables gpm-mmix))))

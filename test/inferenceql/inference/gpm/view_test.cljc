@@ -3,6 +3,7 @@
             [clojure.test :as test :refer [deftest is]]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm.column :as column]
+            [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.proto :as gpm.proto]))
 
 (def latents
@@ -223,3 +224,6 @@
   (let  [view' (view/incorporate-column view-inf column-bernoulli)
          view (view/unincorporate-column view' (:var-name column-bernoulli))]
     (is (= view  view-inf))))
+
+(deftest variables
+  (is (= #{"color" "height" "flip"} (gpm/variables view-inf))))

@@ -23,3 +23,7 @@
   "Given a non-parametric GPM and it's partition, insert a row into into the correct
   category (aka the correct table/cluster)"
   (insert [this values]))
+
+(defprotocol Variables
+  "Given a GPM, returns the variables it supports."
+  (variables [this]))

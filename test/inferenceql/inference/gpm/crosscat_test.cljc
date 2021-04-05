@@ -53,3 +53,6 @@
   (let [probability (gpm/logpdf xcat-model {:color "red" :height 4.0 :flip true} {})]
     ;; Simply checking that we can do logpdf on all columns without error.
     (is (number? probability))))
+
+(deftest variables
+  (is (= #{:color :height :flip} (gpm/variables xcat-model))))

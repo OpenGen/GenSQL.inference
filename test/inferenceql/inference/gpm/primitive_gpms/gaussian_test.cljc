@@ -1,12 +1,14 @@
 (ns inferenceql.inference.gpm.primitive-gpms.gaussian-test
   (:require [clojure.test :as test :refer [deftest is]]
+            [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm.primitive-gpms.gaussian :as gaussian]))
 
+(def var-name "gaussian")
+
 (def gaussian-pgpm
-  (let [var-name "gaussian"
-        suff-stats {:n 0 :sum-x 0 :sum-x-sq 0}]
+  (let [suff-stats {:n 0 :sum-x 0 :sum-x-sq 0}]
     (gaussian/spec->gaussian var-name :suff-stats suff-stats)))
 
 (deftest logpdf
@@ -25,11 +27,11 @@
         constraints {}
         incorporated-value 5
         gaussian-pgpm-simulate (-> gaussian-pgpm
-                                   (gpm.proto/incorporate {"gaussian" incorporated-value})
-                                   (gpm.proto/incorporate {"gaussian" incorporated-value})
-                                   (gpm.proto/incorporate {"gaussian" incorporated-value})
-                                   (gpm.proto/incorporate {"gaussian" incorporated-value})
-                                   (gpm.proto/incorporate {"gaussian" incorporated-value}))
+                                   (gpm.proto/incorporate {var-name incorporated-value})
+                                   (gpm.proto/incorporate {var-name incorporated-value})
+                                   (gpm.proto/incorporate {var-name incorporated-value})
+                                   (gpm.proto/incorporate {var-name incorporated-value})
+                                   (gpm.proto/incorporate {var-name incorporated-value}))
         average (/ (reduce + (repeatedly n #(gpm.proto/simulate gaussian-pgpm-simulate targets constraints)))
                    n)]
     (is (< 4 average 5))))
@@ -78,3 +80,6 @@
     (is (gaussian/gaussian? gaussian))
     (is (gaussian/gaussian? (gaussian/spec->gaussian var-name :suff-stats {:n 0 :sum-x 0 :sum-x-sq 0})))
     (is (gaussian/gaussian? (gaussian/spec->gaussian var-name :suff-stats {:n 0 :sum-x 0 :sum-x-sq 0} :hyperparameters{:m 0 :r 1 :s 1 :nu 1})))))
+
+(deftest variables
+  (is (= #{var-name} (gpm/variables gaussian-pgpm))))

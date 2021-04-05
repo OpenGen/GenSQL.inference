@@ -243,7 +243,13 @@
     (reduce-kv (fn [acc _ category]
                  (+ acc (gpm.proto/logpdf-score category)))
                0
-               categories)))
+               categories))
+
+  gpm.proto/Variables
+  (variables [{:keys [categories]}]
+    (into #{}
+          (mapcat gpm.proto/variables)
+          (vals categories))))
 
 (defn construct-column-from-latents
   "Constructor for a Column GPM, given data for the column and latent

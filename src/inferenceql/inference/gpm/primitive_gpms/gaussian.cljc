@@ -104,7 +104,12 @@
           z-0              (calc-z (:r hyperparameters) (:s hyperparameters) (:nu hyperparameters))]
       (+ (* -0.5 n (+ (Math/log 2) (Math/log Math/PI)))
          z-n
-         (- z-0)))))
+         (- z-0))))
+
+  gpm.proto/Variables
+  (variables [{:keys [var-name]}]
+    #{var-name}))
+
 (defn gaussian?
   "Checks if the given pGPM is Gaussian."
   [stattype]

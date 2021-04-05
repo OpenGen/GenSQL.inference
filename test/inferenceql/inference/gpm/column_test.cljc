@@ -1,7 +1,8 @@
 (ns inferenceql.inference.gpm.column-test
   (:require [inferenceql.inference.gpm.column :as column]
-            [clojure.test :as test :refer [deftest is]]
+            [clojure.test :as test :refer [are deftest is]]
             [inferenceql.inference.utils :as utils]
+            [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.proto :as gpm.proto]))
 
 (def data-bernoulli
@@ -163,3 +164,9 @@
     (is (utils/almost-equal? bernoulli-emp-mean bernoulli-mean absolute-difference threshold))
     (is (utils/almost-equal-maps? categorical-dist categorical-emp-dist absolute-difference threshold))
     (is (utils/almost-equal? gaussian-emp-mean gaussian-mean absolute-difference gaussian-threshold))))
+
+(deftest variables
+  (are [variable gpm] (= #{variable} (gpm/variables gpm))
+    "flip" column-bernoulli
+    "color" column-categorical
+    "height" column-gaussian))

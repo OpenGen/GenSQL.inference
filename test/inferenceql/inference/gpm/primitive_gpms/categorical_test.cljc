@@ -2,11 +2,13 @@
   (:require [clojure.test :as test :refer [deftest is]]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.utils :as utils]
+            [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.primitive-gpms.categorical :as categorical]))
 
+(def var-name "categorical")
+
 (def categorical-pgpm
-  (let [var-name "categorical"
-        suff-stats {:n 0 :counts {"a" 0 "b" 0 "c" 0}}]
+  (let [suff-stats {:n 0 :counts {"a" 0 "b" 0 "c" 0}}]
     (categorical/spec->categorical var-name :suff-stats suff-stats)))
 
 (deftest logpdf
@@ -73,3 +75,6 @@
         categorical (categorical/spec->categorical var-name :options ["a" "b" "c"])]
     (is (categorical/categorical? categorical))
     (is (categorical/categorical? (categorical/spec->categorical var-name :suff-stats {:n 10 :counts {"a" 3 "b" 4 "c" 3}})))))
+
+(deftest variables
+  (is (= #{var-name} (gpm/variables categorical-pgpm))))

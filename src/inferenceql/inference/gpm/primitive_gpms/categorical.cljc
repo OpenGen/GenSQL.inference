@@ -56,7 +56,11 @@
       (+ (primitives/gammaln a)
          (- (primitives/gammaln (+ a n)))
          lg
-         (* -1 k (primitives/gammaln alpha))))))
+         (* -1 k (primitives/gammaln alpha)))))
+
+  gpm.proto/Variables
+  (variables [{:keys [var-name]}]
+    #{var-name}))
 
 (defn categorical?
   "Checks if the given pGPM is Categorical."

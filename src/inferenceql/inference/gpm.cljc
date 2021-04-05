@@ -154,3 +154,8 @@
    (as-gpm
     (edn/read-string (update opts :readers merge readers)
                      s))))
+
+(defn variables
+  "Given a GPM, returns the variables it supports."
+  [gpm]
+  (gpm-proto/variables gpm))

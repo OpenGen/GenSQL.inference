@@ -357,7 +357,13 @@
     (reduce (fn [acc [_ column]]
               (+ acc (gpm.proto/logpdf-score column)))
             0
-            columns)))
+            columns))
+
+  gpm.proto/Variables
+  (variables [{:keys [columns]}]
+    (into #{}
+          (mapcat gpm.proto/variables)
+          (vals columns))))
 
 (defn construct-view-from-latents
   "Constructor for a View GPM, given a spec for the View, latent

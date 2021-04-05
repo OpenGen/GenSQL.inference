@@ -118,7 +118,12 @@
     (reduce (fn [acc [_ view]]
               (+ acc (gpm.proto/logpdf-score view)))
             0
-            views)))
+            views))
+  gpm.proto/Variables
+  (variables [{:keys [views]}]
+    (into #{}
+          (mapcat gpm.proto/variables)
+          (vals views))))
 
 (defn incorporate-column
   "Incorporates a column in to the model at the specified view."

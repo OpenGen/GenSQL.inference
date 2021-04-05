@@ -2,11 +2,13 @@
   (:require [clojure.test :as test :refer [deftest is]]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.utils :as utils]
+            [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.primitive-gpms.bernoulli :as bernoulli]))
 
+(def var-name "flip")
+
 (def bernoulli-pgpm
-  (let [var-name "flip"
-        suff-stats {:n 0 :x-sum 0}]
+  (let [suff-stats {:n 0 :x-sum 0}]
     (bernoulli/spec->bernoulli var-name :suff-stats suff-stats)))
 
 (deftest logpdf
@@ -66,6 +68,9 @@
   (is (not (bernoulli/bernoulli? {:p 0.5}))))
 
 (deftest spec->bernoulli
-  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli "flip")))
-  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli "flip" :suff-stats {:n 10 :x-sum 9})))
-  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli "flip" :suff-stats {:n 10 :x-sum 9} :hyperparameters {:alpha 0.6 :beta 0.4}))))
+  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli var-name)))
+  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli var-name :suff-stats {:n 10 :x-sum 9})))
+  (is (bernoulli/bernoulli? (bernoulli/spec->bernoulli var-name :suff-stats {:n 10 :x-sum 9} :hyperparameters {:alpha 0.6 :beta 0.4}))))
+
+(deftest variables
+  (is (= #{var-name} (gpm/variables bernoulli-pgpm))))

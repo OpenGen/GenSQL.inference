@@ -58,4 +58,8 @@
           logpdf-a  (logpdf-estimate target-a)
           logpdf-b  (logpdf-estimate target-b)
           logpdf-ab (logpdf-estimate joint-target)]
-      (- logpdf-ab (+ logpdf-a logpdf-b)))))
+      (- logpdf-ab (+ logpdf-a logpdf-b))))
+
+  gpm-proto/Variables
+  (variables [this]
+    (set (keys (get this :vars)))))
