@@ -7,6 +7,7 @@
   (:require [inferenceql.inference.utils :as utils]
             [inferenceql.inference.primitives :as primitives]
             [inferenceql.inference.gpm.column :as column]
+            [inferenceql.inference.gpm.conditioned :as conditioned]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.gpm.utils :as gpm.utils]
             [clojure.set]))
@@ -363,7 +364,11 @@
   (variables [{:keys [columns]}]
     (into #{}
           (mapcat gpm.proto/variables)
-          (vals columns))))
+          (vals columns)))
+
+  gpm.proto/Condition
+  (condition [this targets conditions]
+    (conditioned/condition this targets conditions)))
 
 (defn construct-view-from-latents
   "Constructor for a View GPM, given a spec for the View, latent

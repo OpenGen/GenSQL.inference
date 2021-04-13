@@ -27,3 +27,6 @@
 (defprotocol Variables
   "Given a GPM, returns the variables it supports."
   (variables [this]))
+
+(defprotocol Condition
+  (condition [this targets constraints]))

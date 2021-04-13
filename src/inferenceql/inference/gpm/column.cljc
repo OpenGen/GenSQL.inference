@@ -2,10 +2,11 @@
   "Implementation of a GPM that represents a population of data of the
   same primitive type. For a tabular dataset, this GPM abstracts a Column
   of that dataset. See `inferenceql.inference.gpm/column` for details."
-  (:require [inferenceql.inference.gpm.primitive-gpms :as pgpms]
+  (:require [inferenceql.inference.gpm.conditioned :as conditioned]
+            [inferenceql.inference.gpm.primitive-gpms :as pgpms]
+            [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.primitives :as primitives]
-            [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.gpm.proto :as gpm.proto]))
+            [inferenceql.inference.utils :as utils]))
 
 (defn crp-weights
   "Given a column and alpha, returns the CRP prior over categories."
@@ -249,7 +250,11 @@
   (variables [{:keys [categories]}]
     (into #{}
           (mapcat gpm.proto/variables)
-          (vals categories))))
+          (vals categories)))
+
+  gpm.proto/Condition
+  (condition [this targets conditions]
+    (conditioned/condition this targets conditions)))
 
 (defn construct-column-from-latents
   "Constructor for a Column GPM, given data for the column and latent

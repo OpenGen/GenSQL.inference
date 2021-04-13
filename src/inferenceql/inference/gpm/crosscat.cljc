@@ -1,10 +1,11 @@
 (ns inferenceql.inference.gpm.crosscat
   (:require [clojure.set :as set]
+            [inferenceql.inference.gpm.conditioned :as conditioned]
             [inferenceql.inference.gpm.view :as view]
             [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.primitive-gpms :as pgpms]
-            [inferenceql.inference.primitives :as primitives]
-            [inferenceql.inference.gpm.proto :as gpm.proto]))
+            [inferenceql.inference.gpm.proto :as gpm.proto]
+            [inferenceql.inference.primitives :as primitives]))
 
 (defn update-hyper-grids
   "Given a collection of columns, updates the columns' respective hyper grids."
@@ -123,7 +124,10 @@
   (variables [{:keys [views]}]
     (into #{}
           (mapcat gpm.proto/variables)
-          (vals views))))
+          (vals views)))
+  gpm.proto/Condition
+  (condition [this targets conditions]
+    (conditioned/condition this targets conditions)))
 
 (defn incorporate-column
   "Incorporates a column in to the model at the specified view."

@@ -1,5 +1,6 @@
 (ns inferenceql.inference.gpm.multimixture
   (:require [metaprob.prelude :as mp]
+            [inferenceql.inference.gpm.conditioned :as conditioned]
             [inferenceql.inference.gpm.multimixture.utils :as mmix.utils]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm.proto :as gpm-proto]))
@@ -62,4 +63,8 @@
 
   gpm-proto/Variables
   (variables [this]
-    (set (keys (get this :vars)))))
+    (set (keys (get this :vars))))
+
+  gpm-proto/Condition
+  (condition [this targets conditions]
+    (conditioned/condition this targets conditions)))

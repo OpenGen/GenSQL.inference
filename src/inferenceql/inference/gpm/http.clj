@@ -2,6 +2,7 @@
   "Implementation of a GPM that forwards requests over HTTP. See
   `inferenceql.inference.gpm/http` for details."
   (:require [clj-http.client :as http]
+            [inferenceql.inference.gpm.conditioned :as conditioned]
             [inferenceql.inference.gpm.proto :as proto]
             [jsonista.core :as json]))
 
@@ -39,4 +40,9 @@
                               {:accept :json
                                :body body
                                :content-type :json})]
-      (json/read-value (:body response)))))
+      (json/read-value (:body response))))
+
+  proto/Condition
+
+  (condition [this targets conditions]
+    (conditioned/condition this targets conditions)))
