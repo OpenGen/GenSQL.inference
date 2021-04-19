@@ -29,4 +29,4 @@
   (variables [this]))
 
 (defprotocol Condition
-  (condition [this targets constraints]))
+  (condition [this conditions]))

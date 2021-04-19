@@ -44,5 +44,5 @@
 
   proto/Condition
 
-  (condition [this targets conditions]
-    (conditioned/condition this targets conditions)))
+  (condition [this conditions]
+    (conditioned/condition this conditions)))

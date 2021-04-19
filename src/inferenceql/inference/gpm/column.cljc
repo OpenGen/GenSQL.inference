@@ -253,8 +253,8 @@
           (vals categories)))
 
   gpm.proto/Condition
-  (condition [this targets conditions]
-    (conditioned/condition this targets conditions)))
+  (condition [this conditions]
+    (conditioned/condition this conditions)))
 
 (defn construct-column-from-latents
   "Constructor for a Column GPM, given data for the column and latent

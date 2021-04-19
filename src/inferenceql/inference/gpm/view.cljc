@@ -367,8 +367,8 @@
           (vals columns)))
 
   gpm.proto/Condition
-  (condition [this targets conditions]
-    (conditioned/condition this targets conditions)))
+  (condition [this conditions]
+    (conditioned/condition this conditions)))
 
 (defn construct-view-from-latents
   "Constructor for a View GPM, given a spec for the View, latent

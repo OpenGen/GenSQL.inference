@@ -126,8 +126,8 @@
           (mapcat gpm.proto/variables)
           (vals views)))
   gpm.proto/Condition
-  (condition [this targets conditions]
-    (conditioned/condition this targets conditions)))
+  (condition [this conditions]
+    (conditioned/condition this conditions)))
 
 (defn incorporate-column
   "Incorporates a column in to the model at the specified view."
