@@ -1,7 +1,6 @@
 (ns inferenceql.inference.gpm.constrained
   (:refer-clojure :exclude [eval])
   (:require [inferenceql.inference.gpm.proto :as gpm.proto]
-            [inferenceql.inference.utils :as utils]
             [net.cgrand.xforms.rfs :as rfs]))
 
 (defn ^:private and-f

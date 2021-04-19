@@ -264,7 +264,7 @@
 
 (defrecord View [columns latents assignments]
   gpm.proto/GPM
-  (logpdf [this targets constraints]
+  (logpdf [_ targets constraints]
     (let [modeled? (set (keys columns))
           ;; Filtering targets and constaints for only those which are modeled.
           targets (into {} (filter #(modeled? (key %)) targets))
@@ -292,7 +292,7 @@
           lls-constraints (column-logpdfs columns constraints {:add-aux true})
           logp-constraints (utils/logsumexp (vals (merge-with + lls-constraints crp-weights)))]
       (- logp-joint logp-constraints)))
-  (simulate [this targets constraints]
+  (simulate [_ targets constraints]
     (let [modeled? (set (keys columns))
           ;; Filtering targets and constaints for only those which are modeled.
           targets (filter modeled? targets)
@@ -351,7 +351,7 @@
       (infer-row-category-view view' 1 #{row-id})))
 
   gpm.proto/Score
-  (logpdf-score [this]
+  (logpdf-score [_]
     ;; Within a view, each column is independent, given row-category assignments.
     ;; Therefore the score of the view is just the sum of the score of the
     ;; constituent columns.

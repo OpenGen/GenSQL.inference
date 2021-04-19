@@ -5,7 +5,7 @@
 
 (defrecord Categorical [var-name suff-stats hyperparameters]
   gpm.proto/GPM
-  (logpdf [this targets constraints]
+  (logpdf [_ targets constraints]
     (let [x (get targets var-name)
           x' (get constraints var-name)
           constrained? (not (nil? x'))]
@@ -18,7 +18,7 @@
                     denom  (Math/log (+ (* alpha (count counts))
                                         (reduce + (vals counts))))]
                 (- numer denom)))))
-  (simulate [this targets constraints]
+  (simulate [this _ _]
     (let [p (->> (keys (:counts suff-stats))
                  (reduce (fn [m k]
                            (assoc m k (gpm.proto/logpdf
@@ -44,7 +44,7 @@
                                  (update-in [:counts x] dec))))))
 
   gpm.proto/Score
-  (logpdf-score [this]
+  (logpdf-score [_]
     (let [counts (:counts suff-stats)
           n (:n suff-stats)
           k (count counts)

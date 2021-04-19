@@ -40,7 +40,7 @@
 ;; for further information.
 (defrecord Gaussian [var-name suff-stats hyperparameters]
   gpm.proto/GPM
-  (logpdf   [this targets constraints]
+  (logpdf   [_ targets constraints]
     (let [x (get targets var-name)
           x' (get constraints var-name)
           constrained? (not (nil? x'))]
@@ -66,7 +66,7 @@
                 (+ (* -0.5 (+ (Math/log 2) (Math/log Math/PI)))
                    z''
                    (* -1 z'))))))
-  (simulate [this targets constraints]
+  (simulate [_ _ _]
     (let [[m-n r-n s-n nu-n] (posterior-hypers (:n suff-stats)
                                                (:sum-x suff-stats)
                                                (:sum-x-sq suff-stats)
@@ -92,7 +92,7 @@
                                  (update :sum-x-sq #(- % (* x x))))))))
 
   gpm.proto/Score
-  (logpdf-score [this]
+  (logpdf-score [_]
     (let [n                (:n suff-stats)
           sum-x            (:sum-x suff-stats)
           sum-x-sq         (:sum-x-sq suff-stats)

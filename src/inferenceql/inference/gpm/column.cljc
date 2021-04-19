@@ -195,7 +195,7 @@
                 (utils/logsumexp (vals (merge-with +
                                                    (utils/log-normalize (:weights weights-lls))
                                                    (:logps weights-lls))))))))
-  (simulate [this targets constraints]
+  (simulate [this _ _]
     (let [;; Generates the CRP weights for the categories.
           crp-prior (->> categories
                          (reduce-kv (fn [m cat-name category]
@@ -238,7 +238,7 @@
                                    (assoc % cat-remove cat-remove')))))))
 
   gpm.proto/Score
-  (logpdf-score [this]
+  (logpdf-score [_]
     ;; Calculates the logpdf-score by taking the logsumexp of the logpdf-score of the constituent categories,
     ;; weighted by their respective sizes (similar to a CRP, without an additional cluster).
     (reduce-kv (fn [acc _ category]

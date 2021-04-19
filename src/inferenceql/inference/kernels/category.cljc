@@ -1,7 +1,5 @@
 (ns inferenceql.inference.kernels.category
-  (:require [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.primitives :as primitives]
-            [inferenceql.inference.gpm.view :as view]
+  (:require [inferenceql.inference.gpm.view :as view]
             [inferenceql.inference.gpm.crosscat :as xcat]))
 
 #?(:clj

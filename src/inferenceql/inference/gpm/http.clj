@@ -9,7 +9,7 @@
 (defrecord HTTP [url]
   proto/GPM
 
-  (logpdf [this targets constraints]
+  (logpdf [_ targets constraints]
     (let [body (json/write-value-as-string
                 {:targets targets
                  :constraints constraints})
@@ -19,7 +19,7 @@
                                :content-type :json})]
       (json/read-value (:body response))))
 
-  (simulate [this targets constraints]
+  (simulate [_ targets constraints]
     (let [body (json/write-value-as-string
                 {:targets targets
                  :constraints constraints})
@@ -30,7 +30,7 @@
       (json/read-value (:body response)
                        (json/object-mapper {:decode-key-fn keyword}))))
 
-  (mutual-information [this target-a target-b constraints n-samples]
+  (mutual-information [_ target-a target-b constraints n-samples]
     (let [body (json/write-value-as-string
                 {:target-a target-a
                  :target-b target-b

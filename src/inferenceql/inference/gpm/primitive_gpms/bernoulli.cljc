@@ -5,7 +5,7 @@
 
 (defrecord Bernoulli [var-name suff-stats hyperparameters]
   gpm.proto/GPM
-  (logpdf [this targets constraints]
+  (logpdf [_ targets constraints]
     (let [x-sum (get suff-stats :x-sum)
           n (get suff-stats :n)
           alpha' (+ (:alpha hyperparameters) x-sum)
@@ -19,7 +19,7 @@
         constrained? (if (= x x') 0 ##-Inf)
         x (- (Math/log alpha') denom)
         :else (- (Math/log beta') denom))))
-  (simulate [this targets constraints]
+  (simulate [this _ _]
     (< (Math/log (rand))
        (gpm.proto/logpdf this {var-name true} {})))
 
@@ -42,7 +42,7 @@
                                  (update :x-sum #(- % (if x 1 0))))))))
 
   gpm.proto/Score
-  (logpdf-score [this]
+  (logpdf-score [_]
     (let [n (:n suff-stats)
           x-sum (:x-sum suff-stats)
           alpha (:alpha hyperparameters)

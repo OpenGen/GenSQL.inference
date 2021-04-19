@@ -74,7 +74,7 @@
 
 (defrecord XCat [views latents]
   gpm.proto/GPM
-  (logpdf [this targets constraints]
+  (logpdf [_ targets constraints]
     (let [intersection (set/intersection (set (keys targets)) (set (keys constraints)))]
       (if (not-empty intersection)
         (throw (ex-info (str "Targets and constraints must be unique! "
@@ -87,7 +87,7 @@
                        (+ logp view-logp)))
                    0
                    views))))
-  (simulate [this targets constraints]
+  (simulate [_ targets constraints]
     (let [intersection (set/intersection (set targets) (set (keys constraints)))]
       (if (not-empty intersection)
         (throw (ex-info (str "Targets and constraints must be unique! "
@@ -115,7 +115,7 @@
                       xcat
                       views)))))
   gpm.proto/Score
-  (logpdf-score [this]
+  (logpdf-score [_]
     (reduce (fn [acc [_ view]]
               (+ acc (gpm.proto/logpdf-score view)))
             0
