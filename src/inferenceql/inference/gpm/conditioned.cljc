@@ -9,7 +9,11 @@
 
   (simulate [_ targets simulate-conditions]
     (let [merged-conditions (merge conditions simulate-conditions)]
-      (gpm.proto/simulate gpm targets merged-conditions))))
+      (gpm.proto/simulate gpm targets merged-conditions)))
+
+  gpm.proto/Variables
+  (variables [_]
+    (gpm.proto/variables gpm)))
 
 (defn condition
   "Conditions gpm based on conditions via rejection sampling. Arguments are the
