@@ -117,6 +117,31 @@
   [gpm targets constraints]
   (gpm-proto/simulate gpm targets constraints))
 
+(defn condition
+  "Conditions the provided generative probabilistic model such that it only
+  simulates the provided targets, and is always subject to the provided
+  conditions."
+  [gpm conditions]
+  (gpm-proto/condition gpm conditions))
+
+(defn constrain
+  "Constrains a GPM by an event. event is a tree-like data structure. opts is a
+  collection of functions for traversal of that tree-like data structure. Nodes
+  in that data structure are either operations (which can have child nodes),
+  variables, or values.
+
+  Required keys for opts include:
+    - :operation? must be a fn of one arg that returns true if its argument is
+      an operation node
+    - :operands must be a fn of one arg that returns the arguments to an
+      operation node
+    - :operator must be a fn of one arg that returns the operator for an
+      operation node
+    - :variable? must be a fn of one arg that returns true if its argument is a
+      variable"
+  [gpm event opts]
+  (gpm-proto/constrain gpm event opts))
+
 (def readers
   {'inferenceql.inference.gpm.crosscat.XCat xcat/map->XCat
    'inferenceql.inference.gpm.view.View view/map->View

@@ -12,9 +12,8 @@
       (gpm.proto/simulate gpm targets merged-conditions))))
 
 (defn condition
-  "Conditions the provided generative probabilistic model such that it only
-  simulates the provided targets, and is always subject to the provided
-  conditions."
+  "Conditions gpm based on conditions via rejection sampling. Arguments are the
+  same as those for `inferenceql.inference.gom/condition`."
   [gpm conditions]
   (assert map? conditions)
   (->ConditionedGPM gpm conditions))

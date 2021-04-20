@@ -74,20 +74,8 @@
     (gpm.proto/variables this)))
 
 (defn constrain
-  "Constrains a GPM by an event. event is a tree-like data structure. opts is a
-  collection of functions for traversal of that tree-like data structure. Nodes
-  in that data structure are either operations (which can have child nodes),
-  variables, or values.
-
-  Required keys for opts include:
-    - :operation? must be a fn of one arg that returns true if its argument is
-      an operation node
-    - :operands must be a fn of one arg that returns the arguments to an
-      operation node
-    - :operator must be a fn of one arg that returns the operator for an
-      operation node
-    - :variable? must be a fn of one arg that returns true if its argument is a
-      variable"
+  "Constrains gpm based on event via rejection sampling. Arguments are the same
+  as those for `inferenceql.inference.gpm/constrain`."
   [gpm event opts]
   (let [pred? (event->pred event opts)
         variables (event->variables event opts)]
