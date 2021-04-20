@@ -68,4 +68,8 @@
 
   gpm-proto/Condition
   (condition [this conditions]
-    (conditioned/condition this conditions)))
+    (conditioned/condition this conditions))
+
+  gpm-proto/Constrain
+  (constrain [this event opts]
+    (constrained/constrain this event opts)))

@@ -8,6 +8,7 @@
             [inferenceql.inference.primitives :as primitives]
             [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.conditioned :as conditioned]
+            [inferenceql.inference.gpm.constrained :as constrained]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.gpm.utils :as gpm.utils]
             [clojure.set]))
@@ -368,7 +369,11 @@
 
   gpm.proto/Condition
   (condition [this conditions]
-    (conditioned/condition this conditions)))
+    (conditioned/condition this conditions))
+
+  gpm.proto/Constrain
+  (constrain [this event opts]
+    (constrained/constrain this event opts)))
 
 (defn construct-view-from-latents
   "Constructor for a View GPM, given a spec for the View, latent

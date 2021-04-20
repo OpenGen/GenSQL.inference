@@ -30,3 +30,6 @@
 
 (defprotocol Condition
   (condition [this conditions]))
+
+(defprotocol Constrain
+  (constrain [this event opts]))

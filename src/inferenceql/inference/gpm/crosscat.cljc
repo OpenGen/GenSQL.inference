@@ -1,6 +1,7 @@
 (ns inferenceql.inference.gpm.crosscat
   (:require [clojure.set :as set]
             [inferenceql.inference.gpm.conditioned :as conditioned]
+            [inferenceql.inference.gpm.constrained :as constrained]
             [inferenceql.inference.gpm.view :as view]
             [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.primitive-gpms :as pgpms]
@@ -127,7 +128,10 @@
           (vals views)))
   gpm.proto/Condition
   (condition [this conditions]
-    (conditioned/condition this conditions)))
+    (conditioned/condition this conditions))
+  gpm.proto/Constrain
+  (constrain [this event opts]
+    (constrained/constrain this event opts)))
 
 (defn incorporate-column
   "Incorporates a column in to the model at the specified view."

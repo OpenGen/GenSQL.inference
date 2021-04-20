@@ -3,6 +3,7 @@
   `inferenceql.inference.gpm/http` for details."
   (:require [clj-http.client :as http]
             [inferenceql.inference.gpm.conditioned :as conditioned]
+            [inferenceql.inference.gpm.constrained :as constrained]
             [inferenceql.inference.gpm.proto :as proto]
             [jsonista.core :as json]))
 
@@ -45,4 +46,9 @@
   proto/Condition
 
   (condition [this conditions]
-    (conditioned/condition this conditions)))
+    (conditioned/condition this conditions))
+
+  proto/Constrain
+
+  (constrain [this targets conditions]
+    (constrained/constrain this targets conditions)))
