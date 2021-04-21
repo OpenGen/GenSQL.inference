@@ -1,5 +1,8 @@
 (ns inferenceql.inference.gpm.constrained-test
   (:require [clojure.test :refer [are deftest is testing]]
+            [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
             [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.constrained :as constrained]
             [inferenceql.inference.gpm.proto :as gpm.proto]
@@ -123,3 +126,19 @@
     (is (almost-equal? 0.5 (Math/exp (gpm/logpdf cgpm {:x "a"} {})) 10E-2))
     (is (almost-equal? 0.5 (Math/exp (gpm/logpdf cgpm {:x "b"} {})) 10E-2))
     (is (almost-equal? 0.0 (Math/exp (gpm/logpdf cgpm {:x "c"} {})) 10E-2))))
+
+(defspec delegation
+  (testing "variables"
+    (prop/for-all [vs (gen/vector gen/keyword)]
+      (let [model (reify gpm.proto/Variables
+                    (variables [_]
+                      vs))
+            constrained-model (constrained/constrain
+                               model
+                               '(= x 0)
+                               {:operation? seq?
+                                :operator first
+                                :operands rest
+                                :variable? symbol?})]
+        (=  (gpm/variables model)
+            (gpm/variables constrained-model))))))

@@ -70,8 +70,8 @@
           (recur)))))
 
   gpm.proto/Variables
-  (variables [this]
-    (gpm.proto/variables this)))
+  (variables [_]
+    (gpm.proto/variables gpm)))
 
 (defn constrain
   "Constrains gpm based on event via rejection sampling. Arguments are the same
