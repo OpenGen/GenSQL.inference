@@ -31,20 +31,20 @@
   return true if the event has occurred for that sample and false otherwise."
   [event {:keys [operation? variable? operands operator]}]
   (fn [env]
-    (let [eval (fn eval [node env]
-                 (cond (operation? node)
-                       (let [f (get operator-env (operator node))
-                             args (map #(eval % env) (operands node))]
-                         (apply f args))
+    (let [node->pred (fn node->pred [node env]
+                       (cond (operation? node)
+                             (let [f (get operator-env (operator node))
+                                   args (map #(node->pred % env) (operands node))]
+                               (apply f args))
 
-                       (variable? node)
-                       (if-some [v (get env node)]
-                         v
-                         (throw (ex-info "could not resolve symbol"
-                                         {:symbol node :env env})))
+                             (variable? node)
+                             (if-some [v (get env node)]
+                               v
+                               (throw (ex-info "could not resolve symbol"
+                                               {:symbol node :env env})))
 
-                       :else node))]
-      (eval event env))))
+                             :else node))]
+      (node->pred event env))))
 
 (defn ^:private event->variables
   "Returns all the variables in an event."
