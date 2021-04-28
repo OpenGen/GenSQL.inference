@@ -170,7 +170,7 @@
     (edn/read (update opts :readers merge readers)
               stream))))
 
-(defn read-string
+(defn ^:export read-string
   "Like `clojure.edn/read-string` but includes readers for records from
   `inferenceql.inference`."
   ([s]
