@@ -184,3 +184,8 @@
   "Given a GPM, returns the variables it supports."
   [gpm]
   (gpm-proto/variables gpm))
+
+(defn logprob
+  "Returns the log probability of of an event under a model."
+  [gpm event]
+  (gpm-proto/logprob gpm event))

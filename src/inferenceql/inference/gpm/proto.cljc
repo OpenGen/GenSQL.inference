@@ -33,3 +33,6 @@
 
 (defprotocol Constrain
   (constrain [this event opts]))
+
+(defprotocol LogProb
+  (logprob [this event]))
