@@ -1,7 +1,8 @@
 (ns inferenceql.inference.primitives
   (:require [inferenceql.inference.utils :as utils]
             #?(:cljs [inferenceql.inference.distributions :as dist]))
-  #?(:clj (:import [org.apache.commons.math3.special Gamma])))
+  #?(:clj (:import [org.apache.commons.math3.special Gamma]
+                   [org.apache.commons.math3.random RandomDataGenerator])))
 
 (defn gammaln
   "Returns the log of `x` under a gamma function."
@@ -36,6 +37,31 @@
   ([n p]
    (repeatedly n #(bernoulli-simulate p))))
 
+(defn gaussian-logpdf
+  "Returns log probability of `x` under a gaussian distribution parameterized
+  by shape parameter `mu`, with optional scale parameter `sigma`."
+  [x {:keys [mu sigma]}]
+  (let [z-inv (* -0.5 (+ (Math/log sigma)
+                         (Math/log 2)
+                         (Math/log Math/PI)))
+        px    (* -0.5 (Math/pow (/ (- x mu)
+                                   sigma)
+                                2))]
+    (+ z-inv px)))
+
+(defn gaussian-simulate
+  "Generates a sample from a dirichlet distribution with vector parameter `alpha`.
+  Based on a Box-Muller transform.
+  Generates `n` samples, if specified."
+  ([{:keys [mu sigma]}]
+   (let [u1 (rand)
+         u2 (rand)
+         z0 (* (Math/sqrt (* -2 (Math/log u1)))
+               (Math/cos (* 2 Math/PI u2)))]
+     (+ (* z0 sigma) mu)))
+  ([n parameters]
+   (repeatedly n #(gaussian-simulate parameters))))
+
 (defn gamma-logpdf
   "Returns log probability of `x` under a gamma distribution parameterized
   by shape parameter `k`, with optional scale parameter `theta`."
@@ -47,35 +73,57 @@
               (/ x theta))]
     (+ z-inv px)))
 
+(defn gamma-simulate-webppl
+  "An implementation of Marsaglia & Tang, 2000: A Simple Method for Generating Gamma Variables.
+  Based on the javascript implementation found in WebPPL.
+
+  This function works in CLJ as well as CLJS for testing purposes--although it is intened that
+  we only use it in CLJS in practice."
+  [{:keys [k theta]}]
+  (if (< k 1)
+    (let [r (* (gamma-simulate-webppl {:k (+ 1 k) :theta theta})
+               (Math/pow (rand) (/ 1 k)))
+          ret-val (if (= r 0)
+                    #?(:clj (Double/MIN_VALUE)
+                       :cljs (.-MIN_VALUE js/Number))
+                    r)]
+
+      ;; Emit warning on underflow.
+      (when (= r 0)
+        (let [msg (str "gamma-simulate underflow. Rounded result to nearest "
+                       "representable support value")]
+          #?(:clj (.println (System/err) msg)
+             :cljs (.warn js/console msg))))
+
+      ret-val)
+    (let [d (- k (/ 1 3))
+          c (/ 1 (Math/sqrt (* 9 d)))]
+      (loop []
+        (let [[x v] (loop []
+                      (let [x (gaussian-simulate {:mu 0 :sigma 1})
+                            v (+ 1 (* c x))]
+                        (if (<= v 0)
+                          (recur)
+                          [x v])))
+              v (* v v v)
+              u (rand)]
+          (if (or (< u (- 1 (* 0.331 x x x x)))
+                  (< (Math/log u) (+ (* 0.5 x x)
+                                     (* d (+ 1 (- v) (Math/log v))))))
+            (* theta d v)
+            (recur)))))))
+
+#?(:clj (def apache-sampler (RandomDataGenerator.)))
+#?(:clj (defn gamma-simulate-apache
+          [{:keys [k theta]}]
+          (.nextGamma apache-sampler k theta)))
+
 (defn gamma-simulate
-  "Generates a sample from a gamma distribution with shape parameter `k` and scale parameter `theta`.
-  Based on Section 3 of 'Generating Gamma and Beta Random Variables with Non-Integral Shape Parameters'
-  by J Whittaker, found at https://www.jstor.org/stable/pdf/2347003.pdf?seq=1 .
-  Generates `n` samples, if specified."
-  ([{:keys [k theta]}]
-   (if (< k 1)
-     (let [u1 (rand)
-           u2 (rand)
-           u3 (rand)
-           s1 (Math/pow u1 k)
-           s2 (Math/pow u2 (- 1 k))
-           theta (if-not theta 1 theta)]
-       (if (<= (+ s1 s2) 1)
-         (let [y (/ s1
-                    (+ s1 s2))]
-           (* theta
-              (- (- 1 y))  ; If just -y, then returns Gamma(1 - p) variable, contrary to literature.
-              (Math/log u3)))
-         (gamma-simulate {:k k :theta theta})))
-     (let [theta         (if-not theta 1 theta)
-           frac-k        (- k (int k))
-           gamma-floor-k (- (reduce + (repeatedly
-                                        (int k)
-                                        #(Math/log (rand)))))
-           gamma-frac-k  (if (zero? frac-k) 0 (gamma-simulate {:k frac-k}))]
-       (* theta (+ gamma-floor-k gamma-frac-k)))))
-  ([n parameters]
-   (repeatedly n #(gamma-simulate parameters))))
+  ([{:keys [k theta] :or {theta 1}}]
+   #?(:cljs (gamma-simulate-webppl {:k k :theta theta})
+      :clj (gamma-simulate-apache {:k k :theta theta})))
+  ([n params]
+   (repeatedly n #(gamma-simulate params))))
 
 (defn beta-logpdf
   "Returns log probability of `x` under a beta distribution parameterized by
@@ -225,31 +273,6 @@
       (mapv #(/ % z) y)))
   ([n parameters]
    (repeatedly n #(dirichlet-simulate parameters))))
-
-(defn gaussian-logpdf
-  "Returns log probability of `x` under a gaussian distribution parameterized
-  by shape parameter `mu`, with optional scale parameter `sigma`."
-  [x {:keys [mu sigma]}]
-  (let [z-inv (* -0.5 (+ (Math/log sigma)
-                         (Math/log 2)
-                         (Math/log Math/PI)))
-        px    (* -0.5 (Math/pow (/ (- x mu)
-                                   sigma)
-                                2))]
-    (+ z-inv px)))
-
-(defn gaussian-simulate
-  "Generates a sample from a dirichlet distribution with vector parameter `alpha`.
-  Based on a Box-Muller transform.
-  Generates `n` samples, if specified."
-  ([{:keys [mu sigma]}]
-   (let [u1 (rand)
-         u2 (rand)
-         z0 (* (Math/sqrt (* -2 (Math/log u1)))
-               (Math/cos (* 2 Math/PI u2)))]
-     (+ (* z0 sigma) mu)))
-  ([n parameters]
-   (repeatedly n #(gaussian-simulate parameters))))
 
 (defn logpdf
   "Given a primitive, its parameters, returns the log probability of
