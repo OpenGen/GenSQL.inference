@@ -7,7 +7,8 @@
         probcomp/metaprob {:git/url "https://github.com/probcomp/metaprob.git"
                            :sha "8dc9d09f747c1e29886bb9628a0110c6f6bc6f5a"}
         net.cgrand/xforms {:mvn/version "0.19.2"}
-        progrock/progrock {:mvn/version "0.1.2"}}
+        progrock/progrock {:mvn/version "0.1.2"}
+        cljs-bean/cljs-bean {:mvn/version "1.7.0"}}
  :aliases {:test {:extra-paths ["test"]
                   :extra-deps {expound/expound {:mvn/version "0.7.2"}
                                lambdaisland/kaocha {:mvn/version "1.0-612"}
