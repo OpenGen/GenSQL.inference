@@ -1,16 +1,17 @@
 (ns inferenceql.inference.gpm
   (:refer-clojure :exclude [read read-string])
   (:require [clojure.edn :as edn]
+            [inferenceql.inference.gpm.column :as column]
+            [inferenceql.inference.gpm.compositional :as compositional]
+            [inferenceql.inference.gpm.crosscat :as xcat]
+            #?(:clj [inferenceql.inference.gpm.http :as http])
             [inferenceql.inference.gpm.multimixture :as mmix]
             [inferenceql.inference.gpm.multimixture.specification :as mmix.spec]
-            #?(:clj [inferenceql.inference.gpm.http :as http])
-            [inferenceql.inference.gpm.proto :as gpm-proto]
-            [inferenceql.inference.gpm.column :as column]
-            [inferenceql.inference.gpm.crosscat :as xcat]
-            [inferenceql.inference.gpm.view :as view]
             [inferenceql.inference.gpm.primitive-gpms.bernoulli :as bernoulli]
             [inferenceql.inference.gpm.primitive-gpms.categorical :as categorical]
-            [inferenceql.inference.gpm.primitive-gpms.gaussian :as gaussian]))
+            [inferenceql.inference.gpm.primitive-gpms.gaussian :as gaussian]
+            [inferenceql.inference.gpm.proto :as gpm-proto]
+            [inferenceql.inference.gpm.view :as view]))
 
 #?(:clj
    (defn http
@@ -143,12 +144,13 @@
   (gpm-proto/constrain gpm event opts))
 
 (def readers
-  {'inferenceql.inference.gpm.crosscat.XCat xcat/map->XCat
-   'inferenceql.inference.gpm.view.View view/map->View
-   'inferenceql.inference.gpm.column.Column column/map->Column
+  {'inferenceql.inference.gpm.column.Column column/map->Column
+   'inferenceql.inference.gpm.compositional.Compositional compositional/map->Compositional
+   'inferenceql.inference.gpm.crosscat.XCat xcat/map->XCat
    'inferenceql.inference.gpm.primitive_gpms.bernoulli.Bernoulli bernoulli/map->Bernoulli
    'inferenceql.inference.gpm.primitive_gpms.categorical.Categorical categorical/map->Categorical
-   'inferenceql.inference.gpm.primitive_gpms.gaussian.Gaussian gaussian/map->Gaussian})
+   'inferenceql.inference.gpm.primitive_gpms.gaussian.Gaussian gaussian/map->Gaussian
+   'inferenceql.inference.gpm.view.View view/map->View})
 
 (defn as-gpm
   "Coerce argument to a value that implements `gpm-proto.GPM`."
