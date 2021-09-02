@@ -1,10 +1,37 @@
 (ns inferenceql.inference.models.load
-  (:require [clojure.string :refer [lower-case]]
+  (:require [clojure.string :as string :refer [lower-case]]
             [clojure.data.csv :as csv]
             [clojure.java.io :as io]
             [clojure.walk :as walk]
+            [clojure.edn :as edn]
             [inferenceql.inference.gpm.view :as view]
             [inferenceql.inference.gpm.crosscat :as xcat]))
+
+(defn value-coercer
+  "Returns a function that will attempt to coerce a value to a data type
+  compatible with the given statistical type.
+  This function was copied from iql.query.
+  It should be removed when it is available in a separate repo."
+  [stattype]
+  (let [coerce (case stattype
+                  :ignore str
+                  :nominal str
+                  :numerical (comp double edn/read-string))]
+    (fn [value]
+      (when-not (string/blank? value)
+        (coerce value)))))
+
+(defn row-coercer
+  "Returns a function that will attempt to coerce the values in a map to values
+  that match on the statistical types provided.
+  This function was copied from iql.query.
+  It should be removed when it is available in a separate repo."
+  [variable->stattype]
+  (fn [row]
+    (reduce-kv (fn [row variable stattype]
+                 (update row variable (value-coercer stattype)))
+               row
+               variable->stattype)))
 
 (defn csv-data->maps
   "Given csv data as output from a `data.csv` reader,
@@ -16,49 +43,21 @@
             repeat)
        (rest csv-data)))
 
-(defn clean-data
-  "Given a collection of maps representing separate data,
-  and a specified null character, safely parses the data
-  into numerical and categorical types."
-  [data null-character]
-  (reduce (fn [data' datum]
-            (conj data' (reduce-kv (fn [m k v]
-                                     (if (= v null-character)
-                                       (assoc m k nil)
-                                       ;; If there is a parsing error, leave the value as is
-                                       ;; (very likely a quasi-numerical string that Clojure
-                                       ;; attempted to turn into a number).
-                                       ;; NOTE: using `read-string` instead of `edn/read-string`
-                                       ;; leads to inference speed increases by about 15%.
-                                       ;; Cause is currently unknown.
-                                       (let [v' (try (read-string (lower-case v))
-                                                     (catch Exception _ v))]
-                                         (if (symbol? v')
-                                           (assoc m k v)
-                                           (assoc m k v')))))
-                                   {}
-                                   datum)))
-          []
-          data))
-
-(defn filter-variables
-  "Given data and a non-zero number of variable names,
-  removes all of the specified variables from each datum in data."
-  [data & variables]
-  (map #(apply dissoc % variables) data))
-
 (defn load-data
   "Loads the data contained in the csv at `csv-path`
-  and filters out `ignore-columns`, noting which character
-  represents empty values."
-  [{:keys [csv-path null-character ignore-columns]}]
-  (-> csv-path
-      (io/reader)
-      (csv/read-csv)
-      (csv-data->maps)
-      (clean-data null-character)
-      (#(apply filter-variables % ignore-columns))
-      (walk/keywordize-keys)))
+  Coerces values based on data types in schema."
+  [csv-path schema]
+  (let [coercer (row-coercer schema)
+        rows (-> csv-path
+                 (io/reader)
+                 (csv/read-csv)
+                 (csv-data->maps)
+                 (walk/keywordize-keys))]
+    (map coercer rows)))
+
+(defn load-schema
+  [schema-path]
+  (-> schema-path slurp edn/read-string walk/keywordize-keys))
 
 (defn infer-type
   "Given the set of unique data from a particular column,
@@ -84,44 +83,50 @@
         :gaussian
         :categorical))))
 
-(defn infer-types
-  "Given a collection of data, where each datum is a map with variable names as keys
-  and the respective variable data as values, and a specified null character,
-  infers the statistical type of each column in the data."
-  [data null-character]
-  (let [variables (keys (first data))]
+(defn iql-inference-type
+  "Given a `schema` from iql.auto-modeling, returns the iql.inference type for `variable`."
+  [schema variable]
+  (let [iql-type (get schema variable)
+        ;; Maps from auto-modeling types to iql.inference types.
+        conversion {:numerical :gaussian
+                    :nominal :categorical
+                    ;; We should not see ignored columns if iql.inferece is used via the
+                    ;; iql.auto-modeling pipeline as it provides ignored.csv.
+                    :ignore :ignore}]
+    (conversion iql-type)))
+
+(defn gather-options
+  [schema data]
+  (let [variables (keys (first data))
+        null-character ""]
     (reduce (fn [types variable]
               (let [;; Gather all unique non-nil values from the current column.
                     var-data (set (filter #(and (not= null-character %)
                                                 (some? %)
                                                 (not= (symbol null-character) %))
                                           (map #(get % variable) data)))
-                    var-type (infer-type var-data)
-                    ;; If the type is categorical, we must record all possible
-                    ;; values the variable could assume.
-                    options (if (= :categorical var-type)
-                              (into [] var-data)
-                              nil)]
-                (-> types
-                    (assoc-in [:types variable] var-type)
-                    (#(if (= :categorical var-type)
-                        (assoc-in % [:options variable] options)
-                        %)))))
+                    var-type (iql-inference-type schema variable)
+                    options (into [] var-data)]
+                (cond-> (assoc-in types [:types variable] var-type)
+                  ;; If the type is categorical, we must record all possible
+                  ;; values the variable could assume.
+                  (= :categorical var-type) (assoc-in [:options variable] options))))
             {:types {} :options {}}
             variables)))
 
 (defn init-gpm
-  [{:keys [model types options data]}]
-  (case model
-    :dpmm (view/update-hyper-grids
-           (reduce-kv (fn [dpmm row-id datum]
-                        (view/incorporate-by-rowid dpmm datum row-id))
-                      (view/construct-view-from-types types options)
-                      (zipmap (range) data)))
-    :xcat (xcat/update-hyper-grids-xcat
-           (reduce-kv (fn [xcat row-id datum]
-                        (xcat/incorporate-by-rowid xcat datum row-id))
-                      (xcat/construct-xcat-from-types types options)
-                      (zipmap (range) data)))
-    (throw (ex-info (str "model must be either :dpmm or :xcat : " model)
-                    {:model model}))))
+  [model-type data types-and-opts]
+  (let [{:keys [types options]} types-and-opts]
+    (case model-type
+      :dpmm (view/update-hyper-grids
+             (reduce-kv (fn [dpmm row-id datum]
+                          (view/incorporate-by-rowid dpmm datum row-id))
+                        (view/construct-view-from-types types options)
+                        (zipmap (range) data)))
+      :xcat (xcat/update-hyper-grids-xcat
+             (reduce-kv (fn [xcat row-id datum]
+                          (xcat/incorporate-by-rowid xcat datum row-id))
+                        (xcat/construct-xcat-from-types types options)
+                        (zipmap (range) data)))
+      (throw (ex-info (str "model must be either :dpmm or :xcat : " model-type)
+                      {:model model-type})))))

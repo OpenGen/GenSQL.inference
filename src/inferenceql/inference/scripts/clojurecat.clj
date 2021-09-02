@@ -7,60 +7,59 @@
   (:gen-class))
 
 (def cli-options
-  ;; Config file that specifies the null-character and variables to ignore.
-  [["-c" "--config CONFIG" "path to config .edn, must specify :null-character and :ignore-columns"
+  [["-c" "--config CONFIG" "path to config .edn, must specify :model"
     :parse-fn #(-> % slurp edn/read-string)
-    :default {:null-character "" :ignore-columns []}
     :validate [#(and (apply every-pred (map (fn [k] (contains? % k))
-                                            [:null-character
-                                             :ignore-columns
-                                             :model
+                                            [:model
                                              :n-infer-iters]))
                      (or (= (:model %) :xcat)
-                         (= (:model %) :dpmm))
-                     (pos? (:n-infer-iters %)))
-               "must specify :null-character, :ignore-columns, and :model which must be :xcat or :dpmm"]]
+                         (= (:model %) :dpmm)))
+               "must specify :model which must be :xcat or :dpmm"]]
    ;; Path to csv to process.
    ["-d" "--data DATA_CSV" "path to .csv data file"
+    :validate [#(.exists (io/file %)) "File must exist"]]
+   ;; Path to schema for the dataset.
+   ["-s" "--schema SCHEMA" "path to .edn schema file"
     :validate [#(.exists (io/file %)) "File must exist"]]
    ["-o" "--output OUTPUT" "path for output .edn model file"
     :default "model_out.edn"]
    ;; A boolean option defaulting to nil
    ["-h" "--help"]])
 
-(defn pr-binary-status
-  "Given a single argument and function that takes only that argument,
-  prints the given message before completing the task and updating the
-  printed screen to show that the task is completed."
-  [arg function message]
-  (print message "... ")
-  (let [result (function arg)]
-    (print "DONE\n")
-    result))
+(defmacro pr-binary-status
+  "Executes the expression `form`, but prints `message` beforehand, and prints DONE afterwards.
+  Returns the value obtained by executing `form`.
+  This macro is useful for displaying execution status to the user on the commandline."
+  [form message]
+  (let [result-sym (gensym "result")] ; A unique symbol to prevent shadowing.
+    `(do
+       (print (str ~message "..."))
+       (let [~result-sym ~form]
+         (print " DONE\n")
+         ~result-sym))))
 
 (defn -main [& args]
-  (let [parsed (parse-opts args cli-options)
-        options (:options parsed)
-        config (:config options)
-        data (:data options)]
-    (println (str "CONFIG: "
-                  "\n\tcsv-path:             " data
-                  "\n\tnull character:       " (:null-character config)
-                  "\n\tignoring variables:   " (:ignore-columns config)
-                  "\n\tnumber of inf. iters: " (:n-infer-iters config)
-                  "\n\tsave location:        " (:output options)
-                  "\n-----------------------------"))
-    (-> config
-        (assoc :csv-path data)
-        (pr-binary-status models.load/load-data "Loading data")
-        (pr-binary-status #(-> (models.load/infer-types % (:null-character config))
-                               (assoc :data %)
-                               (merge config)) "Inferring types")
-        (pr-binary-status models.load/init-gpm "Initializing GPM")
-        (#(do (println "Performing inference...") %))
-        (infer/infer (:n-infer-iters config))
-        (pr-binary-status (fn [model]
-                            (->> model
-                                 (pr-str)
-                                 (spit (:output options))))
-                          (str "Saving inferred model to: " (:output options))))))
+  (let [{:keys [options]} (parse-opts args cli-options)
+        data-path (get options :data)
+        schema-path (get options :schema)
+        output-path (get options :output)
+        model-type (get-in options [:config :model])
+        n-infer-iters (get-in options [:config :n-infer-iters])
+
+        ;; Start performing work and updating user.
+        schema (pr-binary-status (models.load/load-schema schema-path)
+                                 "Loading schema")
+        rows (pr-binary-status (models.load/load-data data-path schema)
+                               "Loading data")
+        types-and-opts (pr-binary-status (models.load/gather-options schema rows)
+                                         "Gathering category options")
+        model (pr-binary-status (models.load/init-gpm model-type rows types-and-opts)
+                                "Initializing GPM")]
+    (println "Performing inference...")
+    (infer/infer model n-infer-iters)
+    ;; Save the model.
+    (pr-binary-status (->> model
+                           (pr-str)
+                           (spit output-path))
+                      (str "Saving inferred model to: " output-path))))
+
