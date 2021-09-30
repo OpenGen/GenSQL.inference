@@ -4,6 +4,7 @@
             [clojure.java.io :as io]
             [clojure.walk :as walk]
             [clojure.edn :as edn]
+            [medley.core :as medley]
             [inferenceql.inference.gpm.view :as view]
             [inferenceql.inference.gpm.crosscat :as xcat]))
 
@@ -57,7 +58,8 @@
 
 (defn load-schema
   [schema-path]
-  (-> schema-path slurp edn/read-string walk/keywordize-keys))
+  (let [schema (-> schema-path slurp edn/read-string walk/keywordize-keys)]
+    (medley/remove-vals #{:ignore} schema)))
 
 (defn infer-type
   "Given the set of unique data from a particular column,
@@ -89,30 +91,37 @@
   (let [iql-type (get schema variable)
         ;; Maps from auto-modeling types to iql.inference types.
         conversion {:numerical :gaussian
-                    :nominal :categorical
-                    ;; We should not see ignored columns if iql.inferece is used via the
-                    ;; iql.auto-modeling pipeline as it provides ignored.csv.
-                    :ignore :ignore}]
+                    :nominal :categorical}]
+    ;; NOTE: We should not see :ignored columns if iql.inferece is used via the
+    ;; iql.auto-modeling pipeline as it provides ignored.csv, which has ignored
+    ;; columns removed.
+    (assert (not= :ignored iql-type))
     (conversion iql-type)))
 
-(defn gather-options
+(defn options
+  "Returns a collection of unique values taken on by `col` in `data`"
+  [data col]
+  ;; We can assume the null character is "" because when iql.inference is used
+  ;; via iql.auto-modeling, data should have gone through a nullification stage.
+  (->> data
+       (map #(get % col))
+       (remove #(string/blank? (str %)))
+       (distinct)))
+
+(defn types-and-options
+  "Returns a map of with :types and :options.
+    :types - map of column name to iql.inference type.
+    :options - map of column name to unique category options, for categorical columns."
   [schema data]
-  (let [variables (keys (first data))
-        null-character ""]
-    (reduce (fn [types variable]
-              (let [;; Gather all unique non-nil values from the current column.
-                    var-data (set (filter #(and (not= null-character %)
-                                                (some? %)
-                                                (not= (symbol null-character) %))
-                                          (map #(get % variable) data)))
-                    var-type (iql-inference-type schema variable)
-                    options (into [] var-data)]
-                (cond-> (assoc-in types [:types variable] var-type)
-                  ;; If the type is categorical, we must record all possible
-                  ;; values the variable could assume.
-                  (= :categorical var-type) (assoc-in [:options variable] options))))
+  (let [col-names (keys (first data))]
+    (reduce (fn [acc col]
+              (let [var-type (iql-inference-type schema col)]
+                (cond-> (assoc-in acc [:types col] var-type)
+                        ;; If the type is categorical, we must record all possible
+                        ;; values the col could assume.
+                        (= :categorical var-type) (assoc-in [:options col] (options data col)))))
             {:types {} :options {}}
-            variables)))
+            col-names)))
 
 (defn init-gpm
   [model-type data types-and-opts]

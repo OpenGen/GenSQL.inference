@@ -51,7 +51,7 @@
                                  "Loading schema")
         rows (pr-binary-status (models.load/load-data data-path schema)
                                "Loading data")
-        types-and-opts (pr-binary-status (models.load/gather-options schema rows)
+        types-and-opts (pr-binary-status (models.load/types-and-options schema rows)
                                          "Gathering category options")
         model (pr-binary-status (models.load/init-gpm model-type rows types-and-opts)
                                 "Initializing GPM")]
