@@ -56,9 +56,8 @@
         model (pr-binary-status (models.load/init-gpm model-type rows types-and-opts)
                                 "Initializing GPM")]
     (println "Performing inference...")
-    (infer/infer model n-infer-iters)
-    ;; Save the model.
-    (pr-binary-status (->> model
+    ;; Run inference and save the model.
+    (pr-binary-status (->> (infer/infer model n-infer-iters)
                            (pr-str)
                            (spit output-path))
                       (str "Saving inferred model to: " output-path))))
