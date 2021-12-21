@@ -1,5 +1,6 @@
 (ns inferenceql.inference.gpm.crosscat
   (:require [clojure.set :as set]
+            [clojure.edn :as edn]
             [inferenceql.inference.gpm.conditioned :as conditioned]
             [inferenceql.inference.gpm.constrained :as constrained]
             [inferenceql.inference.gpm.view :as view]
@@ -290,42 +291,53 @@
 (defn xcat->mmix
   "Converts a specified XCat GPM into a Multimixture spec."
   [xcat]
-  (let [views (:views xcat)
+  (let [view-number (fn [[view-kw _view]]
+                      (->> (name view-kw)
+                           (re-matches #"view_(\d+)")
+                           second
+                           edn/read-string))
+        ;; Sort views by view-number (asc) and then collect just views.
+        views (map second (sort-by view-number (:views xcat)))
         [vars views]
-        (reduce-kv (fn [[vars views] _ view]
-                     ;; For each view, record the type of each column,
-                     ;; and convert each category into a Multimixture spec representation.
-                     (let [view-latents (:latents view)
-                           view-counts (:counts view-latents)
-                           view-variables (reduce-kv (fn [var-types col-name column]
-                                                       (assoc var-types col-name (:stattype column)))
-                                                     {}
-                                                     (:columns view))
-                           z (reduce + (vals view-counts))
-                           category-names (keys view-counts)
-                           categories (reduce (fn [categories category-name]
-                                                (let [;; The prior of the category is proportional to its size.
-                                                      category-weight (double (/ (get view-counts category-name) z))
-                                                      category
-                                                      (reduce-kv (fn [column-categories _ column]
-                                                                   (let [;; If there is no category for a given column, this means
-                                                                         ;; that there is no associated data with that column in the rows within
-                                                                         ;; that category. Because the types are collapsed, we can generate
-                                                                         ;; a new (empty) category for that column.
-                                                                         col-cat (get-in column [:categories category-name] (column/generate-category column))
-                                                                         col-stattype (:stattype column)]
-                                                                     (merge column-categories
-                                                                            (pgpms/export-category col-stattype col-cat))))
-                                                                 {}
-                                                                 (:columns view))]
-                                                  (conj categories {:probability category-weight
-                                                                    :parameters category})))
-                                              []
-                                              category-names)]
-                       [(merge vars view-variables)
-                        (conj views categories)]))
-                   [{} []]
-                   views)]
+        (reduce (fn [[vars views] view]
+                  ;; For each view, record the type of each column,
+                  ;; and convert each category into a Multimixture spec representation.
+                  (let [view-latents (:latents view)
+                        view-counts (:counts view-latents)
+                        view-variables (reduce-kv (fn [var-types col-name column]
+                                                    (assoc var-types col-name (:stattype column)))
+                                                  {}
+                                                  (:columns view))
+                        z (reduce + (vals view-counts))
+                        cat-number (fn [cat-kw]
+                                     (->> (name cat-kw)
+                                          (re-matches #"cluster_(\d+)")
+                                          second
+                                          edn/read-string))
+                        category-names (sort-by cat-number (keys view-counts))
+                        categories (reduce (fn [categories category-name]
+                                             (let [;; The prior of the category is proportional to its size.
+                                                   category-weight (double (/ (get view-counts category-name) z))
+                                                   category
+                                                   (reduce-kv (fn [column-categories _ column]
+                                                                (let [;; If there is no category for a given column, this means
+                                                                      ;; that there is no associated data with that column in the rows within
+                                                                      ;; that category. Because the types are collapsed, we can generate
+                                                                      ;; a new (empty) category for that column.
+                                                                      col-cat (get-in column [:categories category-name] (column/generate-category column))
+                                                                      col-stattype (:stattype column)]
+                                                                  (merge column-categories
+                                                                         (pgpms/export-category col-stattype col-cat))))
+                                                              {}
+                                                              (:columns view))]
+                                               (conj categories {:probability category-weight
+                                                                 :parameters category})))
+                                           []
+                                           category-names)]
+                    [(merge vars view-variables)
+                     (conj views categories)]))
+                [{} []]
+                views)]
     {:vars vars
      :views views}))
 
