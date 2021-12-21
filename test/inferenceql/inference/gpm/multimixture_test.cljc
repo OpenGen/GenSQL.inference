@@ -218,6 +218,7 @@
 (def threshold 0.5)
 
 (defn- almost-equal? [a b] (utils/almost-equal? a b utils/relerr threshold))
+#_{:clj-kondo/ignore [:unused-private-var]}
 (defn- almost-equal-vectors? [a b] (utils/almost-equal-vectors? a b utils/relerr threshold))
 (defn- almost-equal-maps? [a b] (utils/almost-equal-maps? a b utils/relerr threshold))
 (defn- almost-equal-p? [a b] (utils/almost-equal? a b utils/relerr 0.01))

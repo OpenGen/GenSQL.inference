@@ -42,9 +42,9 @@
                    :operands rest
                    :operator first}
         gpm (reify gpm.proto/GPM
-              (logpdf [_ target constraints]
+              (logpdf [_ _target _constraints]
                 0.5)
-              (simulate [_ target constraints]
+              (simulate [_ _target _constraints]
                 {'x (rand-nth [true false])}))
         cgpm (constrained/constrain gpm '(= x true) sexp-opts)]
     (is (every? #{'{x true}} (repeatedly 100 #(gpm/simulate cgpm '[x] {})))))
