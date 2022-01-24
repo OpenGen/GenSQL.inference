@@ -3,7 +3,6 @@
             [inferenceql.inference.gpm.conditioned :as conditioned]
             [inferenceql.inference.gpm.constrained :as constrained]
             [inferenceql.inference.gpm.multimixture.utils :as mmix.utils]
-            [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm.proto :as gpm-proto]))
 
 ;; XXX Currently, assumes that the row generator of the mmix map is passed in.
@@ -36,31 +35,6 @@
           generative-model      (mmix.utils/optimized-row-generator this)
           [sample _ _] (mp/infer-and-score :procedure generative-model :observation-trace constraint-addrs-vals)]
       (select-keys sample targets)))
-
-  (mutual-information [this target-a target-b constraints n-samples]
-    (let [joint-target (into target-a target-b)
-          samples (repeatedly n-samples #(gpm-proto/simulate
-                                          this
-                                          (cond-> joint-target
-                                            (vector? constraints)
-                                            (into constraints))
-                                          constraints))
-          constraint (if (map? constraints)
-                       (repeat n-samples constraints)
-                       (map #(select-keys % constraints)
-                            samples))
-          logpdf-estimate (fn [target]
-                            (utils/average (map-indexed (fn [i sample]
-                                                          (gpm-proto/logpdf
-                                                           this
-                                                           (select-keys sample target)
-                                                           (nth constraint i)))
-                                                        samples)))
-          ;; TODO: will we get perf improvements if the run one map for all of the below?
-          logpdf-a  (logpdf-estimate target-a)
-          logpdf-b  (logpdf-estimate target-b)
-          logpdf-ab (logpdf-estimate joint-target)]
-      (- logpdf-ab (+ logpdf-a logpdf-b))))
 
   gpm-proto/Variables
   (variables [this]

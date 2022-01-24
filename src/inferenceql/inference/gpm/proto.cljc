@@ -36,3 +36,6 @@
 
 (defprotocol LogProb
   (logprob [this event]))
+
+(defprotocol MutualInfo
+  (mutual-info [this event-a event-b]))

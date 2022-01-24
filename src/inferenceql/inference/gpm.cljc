@@ -109,11 +109,9 @@
   [gpm targets constraints]
   (gpm-proto/logpdf gpm targets constraints))
 
-(defn mutual-information
-  "Given a GPM, estimates the mutual-information of `target-a` and `target-b`
-  given `constraints` with `n-samples`."
-  [gpm target-a target-b constraints n-samples]
-  (gpm-proto/mutual-information gpm target-a target-b constraints n-samples))
+(defn mutual-info
+  [gpm event-a event-b]
+  (gpm-proto/mutual-info gpm event-a event-b))
 
 (defn simulate
   "Given a GPM, simulates a sample of the variables in `targets` given `constraints`."

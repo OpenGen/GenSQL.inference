@@ -1,10 +1,11 @@
 (ns inferenceql.inference.gpm.multimixture.info-theory-queries-test
   (:require #?(:clj [clojure.test :as test :refer [deftest testing is]]
                :cljs [clojure.test :as test :refer [deftest is]])
-            [inferenceql.inference.utils :as utils]
             #?(:clj [inferenceql.inference.plotting.generate-vljson :as plot])
+            [inferenceql.inference.approximate :as approximate]
+            [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.multimixture.search :as search]
-            [inferenceql.inference.gpm :as gpm]))
+            [inferenceql.inference.utils :as utils]))
 
 (def multi-mixture
   {:vars {"x" :gaussian
@@ -42,7 +43,7 @@
 (def gpm-mmix (gpm/Multimixture multi-mixture))
 
 (deftest test-smoke-mi
- (is (utils/pos-float? (gpm/mutual-information
+ (is (utils/pos-float? (approximate/mutual-info
                         gpm-mmix
                         ["x"]
                         ["y"]
@@ -50,7 +51,7 @@
                         2))))
 
 (deftest test-smoke-cmi
- (is (float? (gpm/mutual-information
+ (is (float? (approximate/mutual-info
               gpm-mmix
               ["x"]
               ["y"]
@@ -89,7 +90,7 @@
 (defn- almost-equal? [a b] (utils/almost-equal? a b utils/relerr threshold))
 
 (deftest positive-mi
- (is (< 0.5 (gpm/mutual-information
+ (is (< 0.5 (approximate/mutual-info
              gpm-mmix
              ["x"]
              ["y"]
@@ -97,7 +98,7 @@
              num-samples))))
 
 (deftest zero-mi
-  (is (almost-equal? 0. (gpm/mutual-information
+  (is (almost-equal? 0. (approximate/mutual-info
                          gpm-mmix
                          ["v"]
                          ["w"]
@@ -105,7 +106,7 @@
                          num-samples))))
 
 (deftest zero-cmi
- (is (almost-equal? 0. (gpm/mutual-information
+ (is (almost-equal? 0. (approximate/mutual-info
                         gpm-mmix
                         ["x"]
                         ["y"]
@@ -113,7 +114,7 @@
                         num-samples))))
 
 (deftest zero-cmi-marginal
- (is (almost-equal? 0. (gpm/mutual-information
+ (is (almost-equal? 0. (approximate/mutual-info
                         gpm-mmix
                         ["x"]
                         ["y"]
