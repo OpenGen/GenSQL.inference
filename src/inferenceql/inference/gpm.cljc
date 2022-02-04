@@ -1,9 +1,11 @@
 (ns inferenceql.inference.gpm
-  (:refer-clojure :exclude [read read-string])
-  (:require [clojure.edn :as edn]
+  (:refer-clojure :exclude [merge read read-string])
+  (:require [clojure.core :as clojure]
+            [clojure.edn :as edn]
             [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.compositional :as compositional]
             [inferenceql.inference.gpm.crosscat :as xcat]
+            #?(:clj [inferenceql.inference.gpm.ensemble :as ensemble])
             #?(:clj [inferenceql.inference.gpm.http :as http])
             [inferenceql.inference.gpm.multimixture :as mmix]
             [inferenceql.inference.gpm.multimixture.specification :as mmix.spec]
@@ -147,6 +149,7 @@
   {'inferenceql.inference.gpm.column.Column column/map->Column
    'inferenceql.inference.gpm.compositional.Compositional compositional/map->Compositional
    'inferenceql.inference.gpm.crosscat.XCat xcat/map->XCat
+   #?@(:clj ['inferenceql.inference.gpm.ensemble.Ensemble ensemble/map->Ensemble])
    'inferenceql.inference.gpm.primitive_gpms.bernoulli.Bernoulli bernoulli/map->Bernoulli
    'inferenceql.inference.gpm.primitive_gpms.categorical.Categorical categorical/map->Categorical
    'inferenceql.inference.gpm.primitive_gpms.gaussian.Gaussian gaussian/map->Gaussian
@@ -169,7 +172,7 @@
    (read {} stream))
   ([opts stream]
    (as-gpm
-    (edn/read (update opts :readers merge readers)
+    (edn/read (update opts :readers clojure/merge readers)
               stream))))
 
 (defn ^:export read-string
@@ -179,7 +182,7 @@
    (read-string {} s))
   ([opts s]
    (as-gpm
-    (edn/read-string (update opts :readers merge readers)
+    (edn/read-string (update opts :readers clojure/merge readers)
                      s))))
 
 (defn variables
