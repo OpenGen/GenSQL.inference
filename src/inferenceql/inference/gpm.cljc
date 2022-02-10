@@ -150,6 +150,7 @@
    'inferenceql.inference.gpm.compositional.Compositional compositional/map->Compositional
    'inferenceql.inference.gpm.crosscat.XCat xcat/map->XCat
    #?@(:clj ['inferenceql.inference.gpm.ensemble.Ensemble ensemble/map->Ensemble])
+   'inferenceql.inference.gpm.multimixture.Multimixture mmix/map->Multimixture
    'inferenceql.inference.gpm.primitive_gpms.bernoulli.Bernoulli bernoulli/map->Bernoulli
    'inferenceql.inference.gpm.primitive_gpms.categorical.Categorical categorical/map->Categorical
    'inferenceql.inference.gpm.primitive_gpms.gaussian.Gaussian gaussian/map->Gaussian
