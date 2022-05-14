@@ -29,6 +29,8 @@ jobs:
           path: ~/.gitlibs
           key: gitlibs-${{ hashFiles('deps.edn') }}
       - name: Prepare dependencies
-        run: clojure -A:test -P
-      - name: Run tests
-        run: bin/kaocha --reporter documentation --plugin kaocha.plugin/profiling
+        run: clojure -P -M:test:clj-test:cljs-test
+      - name: Run Clojure tests
+        run: clojure -X:test:clj-test
+      - name: Run ClojureScript tests
+        run: clojure -M:test:cljs-test
