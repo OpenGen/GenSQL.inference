@@ -1,9 +1,11 @@
 {:deps {clj-http/clj-http {:mvn/version "3.12.1"}
+        medley/medley {:mvn/version "1.4.0"}
         metosin/jsonista {:mvn/version "0.3.1"}
         org.apache.commons/commons-math3 {:mvn/version "3.6.1"}
         org.clojure/clojure {:mvn/version "1.10.3"}
         org.clojure/clojurescript {:mvn/version "1.10.773"}
         org.clojure/data.csv {:mvn/version "1.0.0"}
+        org.clojure/data.json {:mvn/version "2.4.0"}
         org.clojure/math.combinatorics {:mvn/version "0.1.6"}
         probcomp/metaprob {:git/url "https://github.com/probcomp/metaprob.git"
                            :sha "8dc9d09f747c1e29886bb9628a0110c6f6bc6f5a"}
