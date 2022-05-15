@@ -1,12 +1,13 @@
 (ns inferenceql.inference.gpm.constrained-test
-  (:require [clojure.test :refer [are deftest is testing]]
+  (:require [clojure.math :as math]
+            [clojure.test :refer [are deftest is testing]]
             [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
             [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.constrained :as constrained]
-            [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.gpm.primitive-gpms.categorical :as categorical]
+            [inferenceql.inference.gpm.proto :as gpm.proto]
             [metaprob.distributions :as distributions]
             [net.cgrand.xforms.rfs :as rfs]))
 
@@ -25,7 +26,7 @@
   ([x y]
    (almost-equal? x y 10E-4))
   ([x y threshold]
-   (< (Math/abs (- x y))
+   (< (abs (- x y))
       threshold)))
 
 (deftest approximate-equality
@@ -59,8 +60,8 @@
             (is (every? #{{:x "no"}}   (repeatedly 100 #(gpm/simulate cgpm [:x] {}))))
             (is (every? (comp pos? :y) (repeatedly 100 #(gpm/simulate cgpm [:y] {})))))
           (testing "logpdf"
-            (is (=             1.0 (Math/exp (gpm/logpdf cgpm {:x "no"}  {}))))
-            (is (almost-equal? 0.0 (Math/exp (gpm/logpdf cgpm {:x "yes"} {})))))))
+            (is (=             1.0 (math/exp (gpm/logpdf cgpm {:x "no"}  {}))))
+            (is (almost-equal? 0.0 (math/exp (gpm/logpdf cgpm {:x "yes"} {})))))))
       (testing "numerical target"
         (let [cgpm (constrained/constrain mmix '(= :x "no") opts)]
           (testing "simulate"
@@ -70,8 +71,8 @@
               (is (almost-equal? 10 average-y 0.5))))
           (testing "logpdf"
             (let [{:keys [mu sigma]} (get-in mmix [:views 0 1 :parameters :y])]
-              (is (almost-equal? (Math/exp (distributions/score-gaussian 9 [mu sigma]))
-                                 (Math/exp (gpm/logpdf cgpm {:y 9} {})))))))))))
+              (is (almost-equal? (math/exp (distributions/score-gaussian 9 [mu sigma]))
+                                 (math/exp (gpm/logpdf cgpm {:y 9} {})))))))))))
 
 (defn seq->next
   [coll]
@@ -97,14 +98,14 @@
     (is (= {:x 2} (gpm/simulate cgpm [:x] {})))))
 
 (deftest mean
-  (let [next (seq->next  [(Math/log 1) (Math/log 0)])
+  (let [next (seq->next  [(math/log 1.0) (math/log 0.0)])
         gpm (reify gpm.proto/GPM
               (logpdf [_ _ _]
                 (next))
               (simulate [_ _ _]
                 nil))
         cgpm (constrained/->ConstrainedGPM gpm (constantly true) #{:x} 10)]
-    (is (almost-equal? 0.5 (Math/exp (gpm/logpdf cgpm {} {}))))))
+    (is (almost-equal? 0.5 (math/exp (gpm/logpdf cgpm {} {}))))))
 
 (deftest condition-categorical
   (let [opts {:operation? seq?
@@ -123,9 +124,9 @@
         event '(or (= :x "a")
                    (= :x "b"))
         cgpm (constrained/constrain gpm event opts)]
-    (is (almost-equal? 0.5 (Math/exp (gpm/logpdf cgpm {:x "a"} {})) 10E-2))
-    (is (almost-equal? 0.5 (Math/exp (gpm/logpdf cgpm {:x "b"} {})) 10E-2))
-    (is (almost-equal? 0.0 (Math/exp (gpm/logpdf cgpm {:x "c"} {})) 10E-2))))
+    (is (almost-equal? 0.5 (math/exp (gpm/logpdf cgpm {:x "a"} {})) 10E-2))
+    (is (almost-equal? 0.5 (math/exp (gpm/logpdf cgpm {:x "b"} {})) 10E-2))
+    (is (almost-equal? 0.0 (math/exp (gpm/logpdf cgpm {:x "c"} {})) 10E-2))))
 
 (defspec delegation
   (testing "variables"

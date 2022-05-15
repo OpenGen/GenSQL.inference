@@ -1,13 +1,14 @@
 (ns inferenceql.inference.gpm.multimixture.search
-  (:require [clojure.spec.alpha :as s]
-            [metaprob.distributions :as dist]
-            [metaprob.generative-functions :as g :refer [at gen]]
-            [metaprob.prelude :as mp]
+  (:require [clojure.math :as math]
+            [clojure.spec.alpha :as s]
             [inferenceql.inference.distributions :as idbdist]
+            [inferenceql.inference.gpm :as gpm]
+            [inferenceql.inference.gpm.multimixture.specification :as spec]
             [inferenceql.inference.gpm.multimixture.utils :as mmix.utils]
             [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.gpm :as gpm]
-            [inferenceql.inference.gpm.multimixture.specification :as spec]))
+            [metaprob.distributions :as dist]
+            [metaprob.generative-functions :as g :refer [at gen]]
+            [metaprob.prelude :as mp]))
 
 (s/fdef optimized-row-generator
   :args (s/cat :spec ::spec/multi-mixture))
@@ -122,7 +123,7 @@
         constraints (constraints-for-scoring-p target-col constraint-cols row)]
     (if (nil? (get target target-col))
       1
-      (Math/exp (gpm/logpdf (gpm/Multimixture row-generator) target constraints)))))
+      (math/exp (gpm/logpdf (gpm/Multimixture row-generator) target constraints)))))
 
 (defn anomaly-search
   [spec target-col conditional-cols data]

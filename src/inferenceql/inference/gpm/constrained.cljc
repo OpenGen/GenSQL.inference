@@ -1,6 +1,7 @@
 (ns inferenceql.inference.gpm.constrained
   (:refer-clojure :exclude [eval])
-  (:require [inferenceql.inference.gpm.proto :as gpm.proto]
+  (:require [clojure.math :as math]
+            [inferenceql.inference.gpm.proto :as gpm.proto]
             [net.cgrand.xforms.rfs :as rfs]))
 
 (defn ^:private and-f
@@ -56,9 +57,9 @@
 (defrecord ConstrainedGPM [gpm pred? variables sample-size]
   gpm.proto/GPM
   (logpdf [this targets conditions]
-    (Math/log
+    (math/log
      (transduce (map #(let [conditions (merge conditions %)]
-                        (Math/exp (gpm.proto/logpdf gpm targets conditions))))
+                        (math/exp (gpm.proto/logpdf gpm targets conditions))))
                 rfs/avg
                 (repeatedly sample-size #(gpm.proto/simulate this variables {})))))
 

@@ -1,7 +1,7 @@
 (ns inferenceql.inference.kernels.category-test
   (:require [clojure.test :as test :refer [deftest is]]
-            [inferenceql.inference.kernels.category :as c]
-            [inferenceql.inference.gpm.view :as view]))
+            [inferenceql.inference.gpm.view :as view]
+            [inferenceql.inference.kernels.category :as c]))
 
 (def latents-one-mislabeled
   {:alpha 1
@@ -48,7 +48,7 @@
         ;; logP["color" = "red", "height" = 10 | c_0]
         ;;    = log(weight_0 * P["color" = "red" | c_0]) + log(weight_0 * P["height" = 10 | c_0])
         ;;    = log(3 / 10) + -0.2006706954621511 + -2.573270124731785
-        ;;   ~= (Math/exp -3.9779136245198723)
+        ;;   ~= (math/exp -3.9779136245198723)
         ;;     -> exp: 0.018724665294720857
 
         ;; logP["color" = "red", "height" = 10 | c_1]

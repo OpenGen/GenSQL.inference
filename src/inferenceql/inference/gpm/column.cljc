@@ -2,8 +2,9 @@
   "Implementation of a GPM that represents a population of data of the
   same primitive type. For a tabular dataset, this GPM abstracts a Column
   of that dataset. See `inferenceql.inference.gpm/column` for details."
-  (:require [inferenceql.inference.gpm.constrained :as constrained]
+  (:require [clojure.math :as math]
             [inferenceql.inference.gpm.conditioned :as conditioned]
+            [inferenceql.inference.gpm.constrained :as constrained]
             [inferenceql.inference.gpm.primitive-gpms :as pgpms]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.primitives :as primitives]
@@ -182,11 +183,11 @@
                     (reduce-kv (fn [m cat-name category]
                                  (-> m
                                      ;; A category's weight is proportional to how many elements it contains.
-                                     (assoc-in [:weights cat-name] (Math/log (-> category :suff-stats :n)))
+                                     (assoc-in [:weights cat-name] (math/log (-> category :suff-stats :n)))
                                      (assoc-in [:logps cat-name] (gpm.proto/logpdf category column-target {}))))
                                ;; Generate an additional category in the Column, the weight of which is
                                ;; defined by the concentration parameter of the Column, `alpha`.
-                               {:weights {:aux (Math/log (get this :alpha 1))}
+                               {:weights {:aux (math/log (get this :alpha 1))}
                                 :logps {:aux (gpm.proto/logpdf (generate-category this) column-target {})}}
                                categories)]
                 ;; We want to sum probabilities across all categories, but since we are in the log space, we must
@@ -200,7 +201,7 @@
     (let [;; Generates the CRP weights for the categories.
           crp-prior (->> categories
                          (reduce-kv (fn [m cat-name category]
-                                      (assoc m cat-name (Math/log (-> category :suff-stats :n))))
+                                      (assoc m cat-name (math/log (-> category :suff-stats :n))))
                                     {})
                          (#(assoc % :aux 0)) ; Add an additional category to sample from the Column's CRP.
                          (utils/log-normalize))

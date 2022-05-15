@@ -1,9 +1,10 @@
 (ns inferenceql.inference.gpm.primitive-gpms.categorical-test
-  (:require [clojure.test :as test :refer [deftest is]]
-            [inferenceql.inference.gpm.proto :as gpm.proto]
-            [inferenceql.inference.utils :as utils]
+  (:require [clojure.math :as math]
+            [clojure.test :as test :refer [deftest is]]
             [inferenceql.inference.gpm :as gpm]
-            [inferenceql.inference.gpm.primitive-gpms.categorical :as categorical]))
+            [inferenceql.inference.gpm.primitive-gpms.categorical :as categorical]
+            [inferenceql.inference.gpm.proto :as gpm.proto]
+            [inferenceql.inference.utils :as utils]))
 
 (def var-name "categorical")
 
@@ -15,9 +16,9 @@
   (let [targets {"categorical" "a"}
         constraints {"categorical" "b"}
         threshold 1e-5]
-    (is (utils/almost-equal? (double (/ 1 3)) (Math/exp (gpm.proto/logpdf categorical-pgpm targets {})) utils/relerr threshold))
-    (is (= 1.0 (Math/exp (gpm.proto/logpdf categorical-pgpm {} {}))))
-    (is (= 1.0 (Math/exp (gpm.proto/logpdf categorical-pgpm targets targets))))
+    (is (utils/almost-equal? (double (/ 1 3)) (math/exp (gpm.proto/logpdf categorical-pgpm targets {})) utils/relerr threshold))
+    (is (= 1.0 (math/exp (gpm.proto/logpdf categorical-pgpm {} {}))))
+    (is (= 1.0 (math/exp (gpm.proto/logpdf categorical-pgpm targets targets))))
     (is (= ##-Inf (gpm.proto/logpdf categorical-pgpm targets constraints)))))
 
 (deftest simulate
@@ -26,7 +27,7 @@
         targets []
         constraints {}
         samples (frequencies (repeatedly n #(gpm.proto/simulate categorical-pgpm targets constraints)))]
-    (is (every? identity (mapv (fn [k] (< (utils/abs (- (/ (get samples k) n)
+    (is (every? identity (mapv (fn [k] (< (abs (- (/ (get samples k) n)
                                                         (/ 1 3)))
                                           error-margin))
                                (-> categorical-pgpm

@@ -1,9 +1,10 @@
 (ns inferenceql.inference.gpm.primitive-gpms.gaussian-test
-  (:require [clojure.test :as test :refer [deftest is]]
+  (:require [clojure.math :as math]
+            [clojure.test :as test :refer [deftest is]]
             [inferenceql.inference.gpm :as gpm]
+            [inferenceql.inference.gpm.primitive-gpms.gaussian :as gaussian]
             [inferenceql.inference.gpm.proto :as gpm.proto]
-            [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.gpm.primitive-gpms.gaussian :as gaussian]))
+            [inferenceql.inference.utils :as utils]))
 
 (def var-name "gaussian")
 
@@ -16,9 +17,9 @@
         constraints {"gaussian" 1}]
     ;; See http://www.stats.ox.ac.uk/~teh/research/notes/GaussianInverseGamma.pdf for
     ;; calculation.
-    (is (utils/almost-equal? (Math/log 0.22507) (gpm.proto/logpdf gaussian-pgpm targets {}) utils/relerr 1e-3))
-    (is (= 1.0 (Math/exp (gpm.proto/logpdf gaussian-pgpm {} {}))))
-    (is (= 1.0 (Math/exp (gpm.proto/logpdf gaussian-pgpm targets targets))))
+    (is (utils/almost-equal? (math/log 0.22507) (gpm.proto/logpdf gaussian-pgpm targets {}) utils/relerr 1e-3))
+    (is (= 1.0 (math/exp (gpm.proto/logpdf gaussian-pgpm {} {}))))
+    (is (= 1.0 (math/exp (gpm.proto/logpdf gaussian-pgpm targets targets))))
     (is (= ##-Inf (gpm.proto/logpdf gaussian-pgpm targets constraints)))))
 
 (deftest simulate

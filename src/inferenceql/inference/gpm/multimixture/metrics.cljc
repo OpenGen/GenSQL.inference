@@ -1,13 +1,14 @@
 (ns inferenceql.inference.gpm.multimixture.metrics
-  (:require [inferenceql.inference.gpm.multimixture.utils :as utils]))
+  (:require [clojure.math :as math]
+            [inferenceql.inference.gpm.multimixture.utils :as utils]))
 
 (defn check-distribution-criteria
   "Checks basic assumptions about two distributions being compared.
   Namely, the alphabets of the two distributions are the same, all
   entries are nonnegative, and the distributions sum to 1."
   ([p]
-   (assert (< (Math/abs (- (reduce + p) 1.0)) 1e-6) (str "Distribution doesn't sum to 1: "
-                                                         (reduce + p)))
+   (assert (< (abs (- (reduce + p) 1.0)) 1e-6) (str "Distribution doesn't sum to 1: "
+                                                    (reduce + p)))
    (assert (every? #(>= % 0) p) "distribution contains negative elements"))
   ([p q]
    (assert (== (count p) (count q)) (str "p and q have different alphabet lengths: "
@@ -27,7 +28,7 @@
                                     0
                                     #?(:clj Integer/MIN_VALUE
                                        :cljs js/Number.MIN_SAFE_INTEGER))
-                                  (* pi (Math/log (/ pi qi)))))
+                                  (* pi (math/log (/ pi qi)))))
                               p q))]
     ;; If the result is negative, that means pi != 0 when qi == 0 for all i
     (when-not (neg? result) result)))
@@ -37,7 +38,7 @@
   `p` and `q` must have the same alphabet size (i.e. length)."
   [p q]
   (check-distribution-criteria p q)
-  (* 0.5 (reduce + (map (fn [pi qi] (Math/abs (- pi qi)))
+  (* 0.5 (reduce + (map (fn [pi qi] (abs (- pi qi)))
                         p q))))
 
 (defn jensen-shannon-divergence

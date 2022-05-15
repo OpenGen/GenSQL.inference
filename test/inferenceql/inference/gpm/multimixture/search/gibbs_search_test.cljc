@@ -24,7 +24,7 @@
         residuals (->> (mapcat #(map - %1 %2)
                                probs
                                sampled)
-                       (map #(Math/abs %)))]
+                       (map #(abs %)))]
     (doseq [residual residuals]
       (is (< residual 0.05)))
     (is (< (/ (apply + residuals)

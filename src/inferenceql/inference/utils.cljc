@@ -1,12 +1,10 @@
 (ns inferenceql.inference.utils
-  #?(:clj (:require [clojure.java.io :as io])))
+  #?(:clj (:require [clojure.java.io :as io]))
+  (:require [clojure.math :as math]))
 
 (defn normalize [weights]
   (let [total (apply + weights)]
     (map #(/ % total) weights)))
-
-(defn abs [n]
-  (max n (- n)))
 
 (defn all? [l]
   (every? identity l))
@@ -35,7 +33,7 @@
        (- (count a) 1))))
 
 (defn std [a]
-  (Math/sqrt (variance a)))
+  (math/sqrt (variance a)))
 
 #?(:clj (defn save-json
           "Writes the provided Vega-Lite JSON to a file in the plots directory with the
@@ -132,8 +130,8 @@
     (let [log-ps-sorted (sort > log-ps)
           a0 (first log-ps-sorted)
           tail (drop 1 log-ps-sorted)
-          res (+ a0 (Math/log
-                      (inc (reduce + (map #(Math/exp (- % a0))
+          res (+ a0 (math/log
+                      (inc (reduce + (map #(math/exp (- % a0))
                                           tail)))))]
       #?(:clj (if (Double/isNaN res) ; A zero-probability event has occurred.
                   ##-Inf
@@ -155,8 +153,8 @@
   [start end n]
   (if (= start end)
     `(~start)
-    (->> (linspace (Math/log start) (Math/log end) n)
-         (map #(Math/exp %))
+    (->> (linspace (math/log start) (math/log end) n)
+         (map #(math/exp %))
          (take n))))
 
 (defn log-normalize

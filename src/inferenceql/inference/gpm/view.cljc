@@ -4,14 +4,15 @@
   this GPM abstracts a subset of columns of that dataset, the rows of which are clustered
   together in categories. This can also be considered as Dirichlet Process Mixture Model (DPMM).
   See `inferenceql.inference.gpm/view` for details."
-  (:require [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.primitives :as primitives]
+  (:require [clojure.math :as math]
+            [clojure.set]
             [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.conditioned :as conditioned]
             [inferenceql.inference.gpm.constrained :as constrained]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.gpm.utils :as gpm.utils]
-            [clojure.set]))
+            [inferenceql.inference.primitives :as primitives]
+            [inferenceql.inference.utils :as utils]))
 
 (defn column-logpdfs
   "Given a map of columns, and targets, returns a map of category probabilities of the targets."
@@ -283,7 +284,7 @@
           crp-counts (assoc (:counts latents) :aux alpha)
           n (apply + (vals crp-counts))
           crp-weights (reduce-kv (fn [m k v]
-                                   (assoc m k (Math/log (/ v n))))
+                                   (assoc m k (math/log (/ v n))))
                                  {}
                                  crp-counts)
           ;; Map of category->loglikelihood.
@@ -305,8 +306,8 @@
               alpha (:alpha latents)
               z (+ n alpha)
               crp-weights (reduce-kv (fn [m k v]
-                                       (assoc m k (Math/log (/ v z))))
-                                     {:aux (Math/log (/ alpha z))}
+                                       (assoc m k (math/log (/ v z))))
+                                     {:aux (math/log (/ alpha z))}
                                      crp-counts)
               constraint-weights (if (empty? constraints)
                                    {}

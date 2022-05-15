@@ -1,7 +1,8 @@
 (ns inferenceql.inference.gpm.primitive-gpms.gaussian
-  (:require [inferenceql.inference.gpm.proto :as gpm.proto]
-            [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.primitives :as primitives]))
+  (:require [clojure.math :as math]
+            [inferenceql.inference.gpm.proto :as gpm.proto]
+            [inferenceql.inference.primitives :as primitives]
+            [inferenceql.inference.utils :as utils]))
 
 (defn posterior-hypers
   "Given sufficient statistics and the current hyperparameters,
@@ -26,11 +27,11 @@
   "Given the hyperparameters r, s, and nu, calculates the normalizing
   constant Z of a Normal-Inverse-Gamma distribution."
   [r s nu]
-  (+ (* 0.5 (+ (* nu (- (Math/log 2)
-                        (Math/log s)))
-               (Math/log Math/PI)
-               (Math/log 2)
-               (- (Math/log r))))
+  (+ (* 0.5 (+ (* nu (- (math/log 2.0)
+                        (math/log s)))
+               (math/log math/PI)
+               (math/log 2.0)
+               (- (math/log r))))
      (primitives/gammaln (/ nu 2))))
 
 ;; The Gaussian pGPM is defined as a Normal-Inverse-Gamma distribution,
@@ -63,7 +64,7 @@
                                                        hyperparameters)
                     z' (calc-z r' s' nu')
                     z'' (calc-z r'' s'' nu'')]
-                (+ (* -0.5 (+ (Math/log 2) (Math/log Math/PI)))
+                (+ (* -0.5 (+ (math/log 2.0) (math/log math/PI)))
                    z''
                    (* -1 z'))))))
   (simulate [_ _ _]
@@ -72,8 +73,8 @@
                                                (:sum-x-sq suff-stats)
                                                hyperparameters)
           rho (primitives/simulate :gamma {:k (/ nu-n 2) :theta (/ 2 s-n)})
-          mu (primitives/simulate :gaussian {:mu m-n :sigma (/ 1 (Math/pow (* rho r-n) 0.5))})]
-      (primitives/simulate :gaussian {:mu mu :sigma (Math/pow rho -0.5)})))
+          mu (primitives/simulate :gaussian {:mu m-n :sigma (/ 1 (math/pow (* rho r-n) 0.5))})]
+      (primitives/simulate :gaussian {:mu mu :sigma (math/pow rho -0.5)})))
 
   gpm.proto/Incorporate
   (incorporate [this values]
@@ -102,7 +103,7 @@
                                              hyperparameters)
           z-n              (calc-z r-n s-n nu-n)
           z-0              (calc-z (:r hyperparameters) (:s hyperparameters) (:nu hyperparameters))]
-      (+ (* -0.5 n (+ (Math/log 2) (Math/log Math/PI)))
+      (+ (* -0.5 n (+ (math/log 2.0) (math/log math/PI)))
          z-n
          (- z-0))))
 

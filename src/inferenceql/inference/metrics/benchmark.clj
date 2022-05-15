@@ -1,12 +1,13 @@
 (ns inferenceql.inference.metrics.benchmark
-  (:require [clojure.java.io :as io]
-            [clojure.data.json :as json]
+  (:require [clojure.data.json :as json]
+            [clojure.java.io :as io]
+            [clojure.math :as math]
             [clojure.set]
             [clojure.string :as string]
-            [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.crosscat :as xcat]
-            [inferenceql.inference.gpm.view :as view]))
+            [inferenceql.inference.gpm.view :as view]
+            [inferenceql.inference.utils :as utils]))
 
 (defn dpmm-gen-fn
   "Given types, options, and training data for a DPMM model,
@@ -232,7 +233,7 @@
     (reduce (fn [bins [bin-min bin-max]]
               (conj bins (filter (comp #(and (< bin-min %)
                                              (<= % bin-max))
-                                       #(Math/exp %)
+                                       #(math/exp %)
                                        val)
                                  search-results)))
             []

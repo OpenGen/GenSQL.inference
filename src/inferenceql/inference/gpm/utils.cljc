@@ -1,5 +1,6 @@
 (ns inferenceql.inference.gpm.utils
-  (:require [inferenceql.inference.utils :as utils]))
+  (:require [clojure.math :as math]
+            [inferenceql.inference.utils :as utils]))
 
 (defn crp-weights
   "Given a GPM and the number of auxiliary sub-GPMs, calculates the associated CRP weights.
@@ -17,7 +18,7 @@
                                     ;; Set the auxiliary weight from 0 to (alpha / m) / z
                                     ;; which for m auxiliary sub-GPMs, will sum to alpha / z.
                                     (let [cnt' (if (zero? cnt) (/ alpha m) cnt)]
-                                      (assoc counts' sub-gpm-name (Math/log (/ cnt' z)))))
+                                      (assoc counts' sub-gpm-name (math/log (/ cnt' z)))))
                                   {}
                                   counts)]
     (utils/log-normalize altered-counts)))

@@ -1,13 +1,14 @@
 (ns inferenceql.inference.gpm.multimixture-test
-  (:require [clojure.spec.alpha :as s]
-            [clojure.test :as test :refer [deftest testing is]]
-            #?(:clj [clojure.string :as str])
-            [expound.alpha :as expound]
+  (:require #?(:clj [clojure.string :as str])
             #?(:clj [inferenceql.inference.plotting.generate-vljson :as plot])
-            [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.gpm.multimixture.specification :as spec]
-            [inferenceql.inference.gpm.multimixture.search :as search] ;; XXX: why is the "optimized" row generator in search?
+            [clojure.math :as math]
+            [clojure.spec.alpha :as s]
+            [clojure.test :as test :refer [deftest testing is]]
+            [expound.alpha :as expound]
             [inferenceql.inference.gpm :as gpm]
+            [inferenceql.inference.gpm.multimixture.search :as search] ;; XXX: why is the "optimized" row generator in search?
+            [inferenceql.inference.gpm.multimixture.specification :as spec]
+            [inferenceql.inference.utils :as utils]
             [metaprob.distributions :as dist]))
 
 ;; The following data generator has some interesting properties:
@@ -120,8 +121,8 @@
 
 (defn euclidean-distance
   [p1 p2]
-  (Math/sqrt (->> (map - p1 p2)
-                  (map #(Math/pow % 2))
+  (math/sqrt (->> (map - p1 p2)
+                  (map #(math/pow % 2))
                   (reduce +))))
 
 (deftest points-equidistant-from-cluster-centers
@@ -301,7 +302,7 @@
                                :parameters {:x {:mu 3 :sigma 1}
                                             :a {"0" 1.0 "1" 0.0}
                                             :b {"0" 0.95, "1" 0.05}}}]]}]
-    (is (= 0.95  (Math/exp (gpm/logpdf
+    (is (= 0.95  (math/exp (gpm/logpdf
                             (gpm/Multimixture mmix-simple)
                             {:b "0"}
                             {:x 3.}))))))
@@ -320,7 +321,7 @@
                                :parameters {:x {:mu 3 :sigma 1}
                                             :a {"0" 1.0 "1" 0.0}
                                             :b {"0" 0.0 "1" 1.0 }}}]]}]
-    (is (almost-equal-p? 0.95 (Math/exp (gpm/logpdf
+    (is (almost-equal-p? 0.95 (math/exp (gpm/logpdf
                                          (gpm/Multimixture mmix-simple)
                                          {:b "0"}
                                          {:x 3.}
@@ -342,7 +343,7 @@
               cluster        (first cluster-set)
               analytical-pdf (get
                               (get (:parameters (nth (first (:views multi-mixture )) cluster)) :b) category)
-              queried-pdf    (Math/exp (gpm/logpdf
+              queried-pdf    (math/exp (gpm/logpdf
                                         gpm-mmix
                                         {:b category}
                                         point))]
@@ -360,7 +361,7 @@
                                ;; to have generated this observation.
                                0   ;; No component is likely to have generated this observation
                                )
-              queried-pdf   (Math/exp (gpm/logpdf
+              queried-pdf   (math/exp (gpm/logpdf
                                        gpm-mmix
                                        {:a category}
                                        point))]

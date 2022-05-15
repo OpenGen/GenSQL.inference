@@ -1,9 +1,9 @@
 (ns inferenceql.inference.gpm.primitive-gpms.bernoulli-test
-  (:require [clojure.test :as test :refer [deftest is]]
-            [inferenceql.inference.gpm.proto :as gpm.proto]
-            [inferenceql.inference.utils :as utils]
+  (:require [clojure.math :as math]
+            [clojure.test :as test :refer [deftest is]]
             [inferenceql.inference.gpm :as gpm]
-            [inferenceql.inference.gpm.primitive-gpms.bernoulli :as bernoulli]))
+            [inferenceql.inference.gpm.primitive-gpms.bernoulli :as bernoulli]
+            [inferenceql.inference.gpm.proto :as gpm.proto]))
 
 (def var-name "flip")
 
@@ -14,9 +14,9 @@
 (deftest logpdf
   (let [targets {"flip" true}
         constraints {"flip" false}]
-    (is (= 0.5 (Math/exp (gpm.proto/logpdf bernoulli-pgpm targets {}))))
-    (is (= 1.0 (Math/exp (gpm.proto/logpdf bernoulli-pgpm {} {}))))
-    (is (= 1.0 (Math/exp (gpm.proto/logpdf bernoulli-pgpm targets targets))))
+    (is (= 0.5 (math/exp (gpm.proto/logpdf bernoulli-pgpm targets {}))))
+    (is (= 1.0 (math/exp (gpm.proto/logpdf bernoulli-pgpm {} {}))))
+    (is (= 1.0 (math/exp (gpm.proto/logpdf bernoulli-pgpm targets targets))))
     (is (= ##-Inf (gpm.proto/logpdf bernoulli-pgpm targets constraints)))))
 
 (deftest simulate
@@ -25,7 +25,7 @@
         targets []
         constraints {}
         samples (frequencies (repeatedly n #(gpm.proto/simulate bernoulli-pgpm targets constraints)))]
-    (is (< (utils/abs (- (/ (get samples true) n)
+    (is (< (abs (- (/ (get samples true) n)
                          0.5))
            error-margin))))
 
