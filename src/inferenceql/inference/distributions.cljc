@@ -1,24 +1,25 @@
 (ns inferenceql.inference.distributions
-  (:require [clojure.spec.alpha :as s]
+  (:require #?(:clj [incanter.distributions :as incanter.distributions])
+            [clojure.math :as math]
+            [clojure.spec.alpha :as s]
+            [inferenceql.inference.gpm.multimixture.specification :as spec]
             [metaprob.distributions]
-            [metaprob.prelude :as mp]
-            #?(:clj [incanter.distributions :as incanter.distributions])
-            [inferenceql.inference.gpm.multimixture.specification :as spec]))
+            [metaprob.prelude :as mp]))
 
 (defn gamma
   "Returns Gamma(z + 1 = number) using Lanczos approximation.
   https://rosettacode.org/wiki/Gamma_function#Clojure"
   [number]
   (if (< number 0.5)
-    (/ Math/PI (* (Math/sin (* Math/PI number))
+    (/ math/PI (* (math/sin (* math/PI number))
                   (gamma (- 1 number))))
     (let [n (dec number)
           c [0.99999999999980993 676.5203681218851 -1259.1392167224028
              771.32342877765313 -176.61502916214059 12.507343278686905
              -0.13857109526572012 9.9843695780195716e-6 1.5056327351493116e-7]]
-      (* (Math/sqrt (* 2 Math/PI))
-         (Math/pow (+ n 7 0.5) (+ n 0.5))
-         (Math/exp (- (+ n 7 0.5)))
+      (* (math/sqrt (* 2 math/PI))
+         (math/pow (+ n 7 0.5) (+ n 0.5))
+         (math/exp (- (+ n 7 0.5)))
          (+ (first c)
             (apply + (map-indexed #(/ %2 (+ n %1 1)) (next c))))))))
 
@@ -28,36 +29,36 @@
   "Returns Gamma(z + 1 = number) using Lanczos approximation."
   [number]
   (if (< number 0.5)
-    (- (Math/log Math/PI)
-       (+ (Math/log (Math/sin (* Math/PI number)))
+    (- (math/log math/PI)
+       (+ (math/log (math/sin (* math/PI number)))
           (log-gamma (- 1 number))))
     (let [n (dec number)
           c [0.99999999999980993 676.5203681218851 -1259.1392167224028
              771.32342877765313 -176.61502916214059 12.507343278686905
              -0.13857109526572012 9.9843695780195716e-6 1.5056327351493116e-7]]
-      (+ (* 0.5 (Math/log (* 2 Math/PI)))
-         (* (Math/log (+ n 7 0.5))
+      (+ (* 0.5 (math/log (* 2 math/PI)))
+         (* (math/log (+ n 7 0.5))
             (+ n 0.5))
          (- (+ n 7 0.5))
-         (Math/log (+ (first c)
+         (math/log (+ (first c)
                       (apply + (map-indexed #(/ %2 (+ n %1 1)) (next c)))))))))
 
 (defn gamma-dist [k]
   ;; Gamma usually takes a `s` also, but Ulrich says it's not needed.
   (loop []
-    (let [e Math/E
+    (let [e math/E
           u (rand)
           v (rand)
           w (rand)
           condition-1 (<= u (/ e (+ e k)))
           eps (if condition-1
-                (Math/pow v (/ 1 k))
-                (- 1 (Math/log v)))
+                (math/pow v (/ 1 k))
+                (- 1 (math/log v)))
           n   (if condition-1
-                (* w (Math/pow eps (- k 1)))
-                (* w (Math/pow e (- 0 eps))))
-          condition-2 (> n (* (Math/pow eps (- k 1))
-                              (Math/pow e (- 0 eps))))]
+                (* w (math/pow eps (- k 1)))
+                (* w (math/pow e (- 0 eps))))
+          condition-2 (> n (* (math/pow eps (- k 1))
+                              (math/pow e (- 0 eps))))]
       (if condition-2 (recur) eps))))
 
 (s/fdef beta-pdf
@@ -82,9 +83,9 @@
                 (- (+ (log-gamma alpha)
                       (log-gamma beta))
                    (log-gamma (+ alpha beta))))]
-    (- (+ (* (Math/log v)
+    (- (+ (* (math/log v)
              (- alpha 1))
-          (* (Math/log (- 1 v))
+          (* (math/log (- 1 v))
              (- beta 1)))
        (log-b alpha beta))))
 

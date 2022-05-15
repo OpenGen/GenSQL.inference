@@ -2,7 +2,8 @@
   (:import [java.util ArrayList]
            [org.apache.commons.math3.distribution EnumeratedDistribution]
            [org.apache.commons.math3.util Pair])
-  (:require [inferenceql.inference.gpm.proto :as gpm.proto]))
+  (:require [clojure.math :as math]
+            [inferenceql.inference.gpm.proto :as gpm.proto]))
 
 (defn map->enumerated-distribution
   [m]
@@ -10,7 +11,7 @@
     (throw (ex-info "Weights must be negative" {:weights (vals m)})))
   (let [pairs (ArrayList.)]
     (doseq [[k v] m]
-      (.add pairs (Pair. k (Math/exp (double v)))))
+      (.add pairs (Pair. k (math/exp (double v)))))
     (EnumeratedDistribution. pairs)))
 
 (defn weighted-sample

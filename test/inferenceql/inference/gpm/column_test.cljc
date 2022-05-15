@@ -1,5 +1,6 @@
 (ns inferenceql.inference.gpm.column-test
   (:require [inferenceql.inference.gpm.column :as column]
+            [clojure.math :as math]
             [clojure.test :as test :refer [are deftest is]]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm :as gpm]
@@ -69,7 +70,7 @@
 (defn absolute-difference
   "Calculates absolute value of the difference of a and b."
   [a b]
-  (utils/abs (- a b)))
+  (abs (- a b)))
 
 ;; Checks logpdf across the different primitive types.
 (deftest logpdf
@@ -113,14 +114,14 @@
     (is (utils/almost-equal? bernoulli-true-sol bernoulli-true absolute-difference threshold))
     (is (utils/almost-equal? bernoulli-false-sol bernoulli-false absolute-difference threshold))
     (is (utils/almost-equal? 1
-                             (+ (Math/exp bernoulli-true) (Math/exp bernoulli-false))
+                             (+ (math/exp bernoulli-true) (math/exp bernoulli-false))
                              absolute-difference
                              threshold))
 
     (is (utils/almost-equal? categorical-red-sol categorical-red absolute-difference threshold))
     (is (utils/almost-equal? categorical-blue-sol categorical-blue absolute-difference threshold))
     (is (utils/almost-equal? 1
-                             (+ (Math/exp categorical-red) (Math/exp categorical-blue) (Math/exp categorical-green))
+                             (+ (math/exp categorical-red) (math/exp categorical-blue) (math/exp categorical-green))
                              absolute-difference
                              threshold))))
 

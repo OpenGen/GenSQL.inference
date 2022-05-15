@@ -1,5 +1,6 @@
 (ns inferenceql.inference.primitives
-  (:require [inferenceql.inference.utils :as utils]
+  (:require [clojure.math :as math]
+            [inferenceql.inference.utils :as utils]
             #?(:cljs [inferenceql.inference.distributions :as dist]))
   #?(:clj (:import [org.apache.commons.math3.special Gamma]
                    [org.apache.commons.math3.random RandomDataGenerator])))
@@ -25,8 +26,8 @@
   by `p`."
   [x {:keys [:p]}]
   (if x
-    (Math/log p)
-    (Math/log (- 1 p))))
+    (math/log p)
+    (math/log (- 1 p))))
 
 (defn bernoulli-simulate
   "Generates a sample from a bernoulli distribution with parameter `p`.
@@ -41,12 +42,12 @@
   "Returns log probability of `x` under a gaussian distribution parameterized
   by shape parameter `mu`, with optional scale parameter `sigma`."
   [x {:keys [mu sigma]}]
-  (let [z-inv (* -0.5 (+ (Math/log sigma)
-                         (Math/log 2)
-                         (Math/log Math/PI)))
-        px    (* -0.5 (Math/pow (/ (- x mu)
+  (let [z-inv (* -0.5 (+ (math/log sigma)
+                         (math/log 2.0)
+                         (math/log math/PI)))
+        px    (* -0.5 (math/pow (/ (- x mu)
                                    sigma)
-                                2))]
+                                2.0))]
     (+ z-inv px)))
 
 (defn gaussian-simulate
@@ -56,8 +57,8 @@
   ([{:keys [mu sigma]}]
    (let [u1 (rand)
          u2 (rand)
-         z0 (* (Math/sqrt (* -2 (Math/log u1)))
-               (Math/cos (* 2 Math/PI u2)))]
+         z0 (* (math/sqrt (* -2 (math/log u1)))
+               (math/cos (* 2 math/PI u2)))]
      (+ (* z0 sigma) mu)))
   ([n parameters]
    (repeatedly n #(gaussian-simulate parameters))))
@@ -67,9 +68,9 @@
   by shape parameter `k`, with optional scale parameter `theta`."
   [x {:keys [k theta]}]
   (let [z-inv (- (+ (gammaln k)
-                    (* k (Math/log theta))))
+                    (* k (math/log theta))))
         px (- (* (- k 1)
-                 (Math/log x))
+                 (math/log x))
               (/ x theta))]
     (+ z-inv px)))
 
@@ -82,7 +83,7 @@
   [{:keys [k theta]}]
   (if (< k 1)
     (let [r (* (gamma-simulate-webppl {:k (+ 1 k) :theta theta})
-               (Math/pow (rand) (/ 1 k)))
+               (math/pow (rand) (/ 1 k)))
           ret-val (if (= r 0)
                     #?(:clj (Double/MIN_VALUE)
                        :cljs (.-MIN_VALUE js/Number))
@@ -97,7 +98,7 @@
 
       ret-val)
     (let [d (- k (/ 1 3))
-          c (/ 1 (Math/sqrt (* 9 d)))]
+          c (/ 1 (math/sqrt (* 9 d)))]
       (loop []
         (let [[x v] (loop []
                       (let [x (gaussian-simulate {:mu 0 :sigma 1})
@@ -108,8 +109,8 @@
               v (* v v v)
               u (rand)]
           (if (or (< u (- 1 (* 0.331 x x x x)))
-                  (< (Math/log u) (+ (* 0.5 x x)
-                                     (* d (+ 1 (- v) (Math/log v))))))
+                  (< (math/log u) (+ (* 0.5 x x)
+                                     (* d (+ 1 (- v) (math/log v))))))
             (* theta d v)
             (recur)))))))
 
@@ -136,8 +137,8 @@
                 (gammaln beta)))
         c (- alpha 1)
         d (- beta 1)]
-    (+ k (* c (Math/log x))
-       (* d (Math/log (- 1 x))))))
+    (+ k (* c (math/log x))
+       (* d (math/log (- 1 x))))))
 
 (defn beta-simulate
   "Generates a sample from a beta distribution with parameters `alpha` and `beta`.
@@ -157,7 +158,7 @@
   (let [prob (get p x)]
     (if (or (zero? prob) (nil? prob))
       ##-Inf
-      (Math/log prob))))
+      (math/log prob))))
 
 (defn categorical-simulate
   "Generates a sample from a categorical distribution with vector parameters `p`.
@@ -199,7 +200,7 @@
                                   [new-p (conj v new-entry)]))
                               [0 []]
                               p-sorted))
-          flip (Math/log (rand))]
+          flip (math/log (rand))]
       (ffirst (drop-while #(< (second %) flip) cdf))))
   ([n p]
    (repeatedly n #(log-categorical-simulate p))))
@@ -209,7 +210,7 @@
   parameterized by a number `alpha`."
   [x {:keys [alpha]}]
   (let [n (reduce + x)
-        p-tilde (+ (* (count x) (Math/log alpha))
+        p-tilde (+ (* (count x) (math/log alpha))
                    (->> x
                         (map #(gammaln %))
                         (reduce +)))
@@ -259,7 +260,7 @@
                  (gammaln (reduce + alpha)))
         logDirichlet (apply + (map (fn [alpha-k x-k]
                                      (* (- alpha-k 1)
-                                        (Math/log x-k)))
+                                        (math/log x-k)))
                                    alpha
                                    x))]
     (+ z-inv logDirichlet)))

@@ -1,7 +1,8 @@
 (ns inferenceql.inference.gpm.primitive-gpms.categorical
-  (:require [inferenceql.inference.gpm.proto :as gpm.proto]
-            [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.primitives :as primitives]))
+  (:require [clojure.math :as math]
+            [inferenceql.inference.gpm.proto :as gpm.proto]
+            [inferenceql.inference.primitives :as primitives]
+            [inferenceql.inference.utils :as utils]))
 
 (defrecord Categorical [var-name suff-stats hyperparameters]
   gpm.proto/GPM
@@ -14,8 +15,8 @@
         constrained? (if (= x x') 0 ##-Inf)
         :else (let [counts (:counts suff-stats)
                     alpha  (:alpha hyperparameters)
-                    numer  (Math/log (+ alpha (get counts x)))
-                    denom  (Math/log (+ (* alpha (count counts))
+                    numer  (math/log (+ alpha (get counts x)))
+                    denom  (math/log (+ (* alpha (count counts))
                                         (reduce + (vals counts))))]
                 (- numer denom)))))
   (simulate [this _ _]

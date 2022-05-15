@@ -1,7 +1,8 @@
 (ns inferenceql.inference.gpm.primitive-gpms.bernoulli
-  (:require [inferenceql.inference.gpm.proto :as gpm.proto]
-            [inferenceql.inference.utils :as utils]
-            [inferenceql.inference.primitives :as primitives]))
+  (:require [clojure.math :as math]
+            [inferenceql.inference.gpm.proto :as gpm.proto]
+            [inferenceql.inference.primitives :as primitives]
+            [inferenceql.inference.utils :as utils]))
 
 (defrecord Bernoulli [var-name suff-stats hyperparameters]
   gpm.proto/GPM
@@ -10,17 +11,17 @@
           n (get suff-stats :n)
           alpha' (+ (:alpha hyperparameters) x-sum)
           beta' (+ (:beta  hyperparameters) n (* -1 x-sum))
-          denom  (Math/log (+ alpha' beta'))
+          denom  (math/log (+ alpha' beta'))
           x (get targets var-name)
           x' (get constraints var-name)
           constrained? (not (nil? x'))]
       (cond
         (nil? x) 0
         constrained? (if (= x x') 0 ##-Inf)
-        x (- (Math/log alpha') denom)
-        :else (- (Math/log beta') denom))))
+        x (- (math/log alpha') denom)
+        :else (- (math/log beta') denom))))
   (simulate [this _ _]
-    (< (Math/log (rand))
+    (< (math/log (rand))
        (gpm.proto/logpdf this {var-name true} {})))
 
   gpm.proto/Incorporate

@@ -50,7 +50,7 @@
 (defn absolute-difference
   "Calculates absolute value of the difference of a and b."
   [a b]
-  (utils/abs (- a b)))
+  (abs (- a b)))
 
 ;; Checks logpdf across constrained and unconstrained queries.
 (deftest logpdf

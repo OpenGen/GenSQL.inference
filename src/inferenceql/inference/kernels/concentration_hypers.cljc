@@ -1,15 +1,16 @@
 (ns inferenceql.inference.kernels.concentration-hypers
-  (:require [inferenceql.inference.gpm.view :as view]
+  (:require #?(:clj [clojure.data.json :as json])
+            [clojure.math :as math]
             [inferenceql.inference.gpm.crosscat :as xcat]
-            [inferenceql.inference.utils :as utils]
-            #?(:clj [clojure.data.json :as json])
-            [inferenceql.inference.primitives :as primitives]))
+            [inferenceql.inference.gpm.view :as view]
+            [inferenceql.inference.primitives :as primitives]
+            [inferenceql.inference.utils :as utils]))
 
 (defn score-alpha
   "Given sufficient statistics for a CRP, calculates the logpdf for a proposed alpha.
   http://gershmanlab.webfactional.com/pubs/GershmanBlei12.pdf#page=4 (eq 8)"
   [n z k alpha]
-  (+ (* k (Math/log alpha))
+  (+ (* k (math/log alpha))
      z
      (primitives/gammaln alpha)
      (- (primitives/gammaln (+ n alpha)))))
@@ -48,8 +49,8 @@
         eta (primitives/simulate :beta {:alpha (inc alpha) :beta n})
         pi-eta (/ (+ (dec alpha) k)
                   (+ (dec alpha) k (* n
-                                      (- b (Math/log eta)))))
-        theta (/ 1.0 (- b (Math/log eta)))
+                                      (- b (math/log eta)))))
+        theta (/ 1.0 (- b (math/log eta)))
         sample (fn [k]
                  (primitives/simulate :gamma {:k k
                                       :theta theta}))
