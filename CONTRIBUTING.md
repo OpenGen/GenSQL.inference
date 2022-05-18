@@ -2,16 +2,16 @@
 
 ## Running the tests
 
-The test suite makes use of [`kaocha-cljs`](https://github.com/lambdaisland/kaocha-cljs#quickstart), which requires that the JavaScript package `ws` be installed.
+The Clojure tests can be run with:
 
 ```
-yarn install ws
+clojure -X:test:clj-test
 ```
 
-Once `ws` is installed the test suite can be run with [Kaocha](https://github.com/lambdaisland/kaocha):
+The ClojureScript tests can be run with:
 
 ```
-bin/kaocha
+clojure -X:test:cljs-test
 ```
 
 ### Generating test plots
