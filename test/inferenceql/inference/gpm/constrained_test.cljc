@@ -46,9 +46,9 @@
               (logpdf [_ _target _constraints]
                 0.5)
               (simulate [_ _target _constraints]
-                {'x (rand-nth [true false])}))
+                {:x (rand-nth [true false])}))
         cgpm (constrained/constrain gpm '(= x true) sexp-opts)]
-    (is (every? #{'{x true}} (repeatedly 100 #(gpm/simulate cgpm '[x] {})))))
+    (is (every? #{{:x true}} (repeatedly 100 #(gpm/simulate cgpm [:x] {})))))
   (testing "multimixture"
     (let [opts {:operation? seq?
                 :variable? keyword?
