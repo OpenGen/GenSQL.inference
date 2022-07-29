@@ -13,7 +13,12 @@
 
   gpm.proto/Variables
   (variables [_]
-    (gpm.proto/variables gpm)))
+    (gpm.proto/variables gpm))
+
+  gpm.proto/Condition
+  (condition [_ new-conditions]
+    (let [merged-conditions (merge conditions new-conditions)]
+      (->ConditionedGPM gpm merged-conditions))))
 
 (defn condition
   "Conditions gpm based on conditions via rejection sampling. Arguments are the
