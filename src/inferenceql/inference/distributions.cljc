@@ -1,6 +1,5 @@
 (ns inferenceql.inference.distributions
-  (:require #?(:clj [incanter.distributions :as incanter.distributions])
-            [clojure.math :as math]
+  (:require [clojure.math :as math]
             [clojure.spec.alpha :as s]
             [inferenceql.inference.gpm.multimixture.specification :as spec]
             [metaprob.distributions]
@@ -111,10 +110,3 @@
   (beta-logpdf v [alpha beta]))
 
 (def beta (mp/make-primitive beta-sampler beta-scorer))
-
-;; TODO: Remove. This is Metaprob's implementation, inlined.
-#?(:clj (defn mp-beta-scorer
-          [x [alpha beta]]
-          (mp/log (incanter.distributions/pdf
-                   (incanter.distributions/beta-distribution alpha beta)
-                   x))))
