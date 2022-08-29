@@ -7,8 +7,7 @@
         org.clojure/data.csv {:mvn/version "1.0.0"}
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.clojure/math.combinatorics {:mvn/version "0.1.6"}
-        probcomp/metaprob {:git/url "https://github.com/probcomp/metaprob.git"
-                           :sha "8dc9d09f747c1e29886bb9628a0110c6f6bc6f5a"}
+        io.github.probcomp/metaprob {:git/sha "43c4bea80772ed8b2baa51cd5ac6c593a34a3a8b"}
         net.cgrand/xforms {:mvn/version "0.19.2"}
         progrock/progrock {:mvn/version "0.1.2"}
         cljs-bean/cljs-bean {:mvn/version "1.7.0"}}
