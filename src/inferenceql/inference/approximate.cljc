@@ -2,9 +2,10 @@
   (:require [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.utils :as utils]))
 
-(defn mutual-info [this target-a target-b constraints n-samples]
+(defn mutual-info
   "Given a GPM, estimates the mutual-information of `target-a` and `target-b`
   given `constraints` with `n-samples`."
+  [this target-a target-b constraints n-samples]
   (let [joint-target (into target-a target-b)
         samples (repeatedly n-samples #(gpm.proto/simulate
                                         this
