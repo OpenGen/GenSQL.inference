@@ -227,3 +227,10 @@
 
 (deftest variables
   (is (= #{"color" "height" "flip"} (gpm/variables view-inf))))
+
+
+(deftest logprob
+  (is (number? (gpm/logprob view-inf [< "height" 1])))
+  (is (number? (gpm/logprob view-inf [> "height" 2]))))
+
+(logprob)

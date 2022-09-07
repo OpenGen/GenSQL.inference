@@ -24,6 +24,17 @@
                (column/category-logpdfs (get columns var-name) {var-name target} {:add-aux add-aux})))
         (apply merge-with + {}))))
 
+
+(defn column-logprob
+  "Given a map of columns, and targets, returns a map of category probabilities of the targets."
+  ([columns event]
+   (column-logprob columns event {:add-aux false}))
+  ([columns event {:keys [add-aux]}]
+  ;; XXX:
+  (let [[operator a b] event
+        var-name (if (number? a) b a)]
+        {(keyword var-name) (column/category-logprob (get columns var-name) event {:add-aux add-aux})})))
+
 (defn add-aux-categories
   "Add m auxiliary categories to the given view."
   [view m]
@@ -333,6 +344,23 @@
                (map (fn [var-name]
                       {var-name (column/crosscat-simulate (get columns var-name) category-idx)}))
                (apply merge))))))
+
+  gpm.proto/LogProb
+  (logprob [_ event]
+    (let [[operator a b] event]
+      (if (or (= (first event) <) (= (first event) >))
+        (let [modeled? (set (keys columns))
+              alpha (:alpha latents)
+              crp-counts (assoc (:counts latents) :aux alpha)
+              n (apply + (vals crp-counts))
+              crp-weights (reduce-kv (fn [m k v]
+                                       (assoc m k (math/log (/ v n))))
+                                     {}
+                                     crp-counts)
+              ;; XXX: only one column per event :/
+              lls (first (vals (column-logprob columns event {:add-aux true})))]
+          (utils/logsumexp (vals (merge-with + lls crp-weights))))
+        (throw (Exception. "View: Only simple events with < allowed for now")))))
 
   gpm.proto/Incorporate
   (incorporate [this values]

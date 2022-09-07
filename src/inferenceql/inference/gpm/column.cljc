@@ -66,6 +66,21 @@
         (assoc :categories categories')
         (assoc :assignments assignments))))
 
+(defn category-logprob
+  "Calculates the logpdf of the target in each of the Column categories."
+  ([column event]
+   (category-logprob column event {:add-aux false}))
+  ([column event {:keys [add-aux]}]
+   (let [categories (if add-aux
+                      (assoc (:categories column)
+                             :aux
+                             (generate-category column))
+                      (:categories column))]
+   (reduce-kv (fn [logprobs cat-name category]
+                (assoc logprobs cat-name (gpm.proto/logprob category event)))
+              {}
+              categories))))
+
 (defn category-logpdfs
   "Calculates the logpdf of the target in each of the Column categories."
   ([column target]
