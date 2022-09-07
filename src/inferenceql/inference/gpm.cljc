@@ -125,6 +125,11 @@
   [gpm conditions]
   (gpm-proto/condition gpm conditions))
 
+(defn logprob
+  "Returns the log probability of of an event under a model."
+  [gpm event]
+  (gpm-proto/logprob gpm event))
+
 (defn constrain
   "Constrains a GPM by an event. event is a tree-like data structure. opts is a
   collection of functions for traversal of that tree-like data structure. Nodes

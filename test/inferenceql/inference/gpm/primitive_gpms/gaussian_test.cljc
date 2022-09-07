@@ -4,7 +4,8 @@
             [inferenceql.inference.gpm :as gpm]
             [inferenceql.inference.gpm.primitive-gpms.gaussian :as gaussian]
             [inferenceql.inference.gpm.proto :as gpm.proto]
-            [inferenceql.inference.utils :as utils]))
+            [inferenceql.inference.utils :as utils]
+            [fastmath.random :as r]))
 
 (def var-name "gaussian")
 
@@ -21,6 +22,7 @@
     (is (= 1.0 (math/exp (gpm.proto/logpdf gaussian-pgpm {} {}))))
     (is (= 1.0 (math/exp (gpm.proto/logpdf gaussian-pgpm targets targets))))
     (is (= ##-Inf (gpm.proto/logpdf gaussian-pgpm targets constraints)))))
+
 
 (deftest simulate
   (let [n 10000
@@ -84,3 +86,43 @@
 
 (deftest variables
   (is (= #{var-name} (gpm/variables gaussian-pgpm))))
+
+(deftest logprob
+  (let [a 1
+        b 2
+        c 3
+        s1 <
+        s2 >
+        hyperparameters {:m 0 :r 1 :s 1 :nu 1}
+        m    (:m hyperparameters)
+        r    (:r hyperparameters)
+        s    (:s hyperparameters)
+        nu   (:nu hyperparameters)
+        suff-stats {:n 0 :sum-x 0 :sum-x-sq 0}
+        n        (:n suff-stats)
+        sum-x    (:sum-x suff-stats)
+        sum-x-sq (:sum-x-sq suff-stats)
+        rn  (+ r n)
+        nun (+ nu n)
+        mn  (/(+ (* r m) sum-x) rn)
+        sn  (+ s sum-x-sq (* r m m) (* -1 rn mn mn))
+        an  (/ nun 2)
+        bn  (/ sn 2)
+        scalesq (/ (* bn (+ rn 1)) (* an rn))
+        params {:degrees-of-freedom an :loc mn :scale (math/sqrt scalesq)}]
+  (is (= (math/log (r/cdf (r/distribution :t params) a ))
+         (gpm/logprob gaussian-pgpm [s1 (symbol "x") a])))
+  (is (= (math/log (r/cdf (r/distribution :t params) b))
+         (gpm/logprob gaussian-pgpm [s1 (symbol "x") b])))
+  (is (= (math/log (r/cdf (r/distribution :t params) c))
+         (gpm/logprob gaussian-pgpm [s1 (symbol "x") c])))
+  (is (= (math/log (- 1 (r/cdf (r/distribution :t params) a)))
+         (gpm/logprob gaussian-pgpm [s2 (symbol "x") a])))
+  (is (= (math/log (- 1 (r/cdf (r/distribution :t params) b)))
+         (gpm/logprob gaussian-pgpm [s2 (symbol "x") b])))
+  (is (= (math/log (- 1 (r/cdf (r/distribution :t params) c)))
+         (gpm/logprob gaussian-pgpm [s2 (symbol "x") c])))
+  (is (thrown? Exception (gpm/logprob gaussian-pgpm [(symbol "AND")
+                                                     [> (symbol "x") 1]
+                                                     [> (symbol "x") 1]])))))
+;(logprob)

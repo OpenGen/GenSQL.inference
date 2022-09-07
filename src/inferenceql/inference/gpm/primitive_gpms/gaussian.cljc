@@ -1,6 +1,7 @@
 (ns inferenceql.inference.gpm.primitive-gpms.gaussian
   (:require [clojure.math :as math]
             [inferenceql.inference.gpm.proto :as gpm.proto]
+            [fastmath.random :as r]
             [inferenceql.inference.primitives :as primitives]
             [inferenceql.inference.utils :as utils]))
 
@@ -39,6 +40,10 @@
 ;; both mean and variance are unknown.
 ;; Follow http://www.stats.ox.ac.uk/~teh/research/notes/GaussianInverseGamma.pdf
 ;; for further information.
+
+;; Ulli: This should of course not be a constant
+(def DEGREES-OF-FREEDOM 3)
+
 (defrecord Gaussian [var-name suff-stats hyperparameters]
   gpm.proto/GPM
   (logpdf   [_ targets constraints]
@@ -75,6 +80,34 @@
           rho (primitives/simulate :gamma {:k (/ nu-n 2) :theta (/ 2 s-n)})
           mu (primitives/simulate :gaussian {:mu m-n :sigma (/ 1 (math/pow (* rho r-n) 0.5))})]
       (primitives/simulate :gaussian {:mu mu :sigma (math/pow rho -0.5)})))
+
+
+;(distribution :beta {:alpha 1.0, :beta 1.0})
+;>  :t (:degrees-of-freedom),
+  gpm.proto/LogProb
+  (logprob
+    [this event]
+    (let [[operator a b] event
+        _ (println "event")
+        _ (println event)
+        m    (:m hyperparameters)
+        r    (:r hyperparameters)
+        s    (:s hyperparameters)
+        nu   (:nu hyperparameters)
+        n        (:n suff-stats)
+        sum-x    (:sum-x suff-stats)
+        sum-x-sq (:sum-x-sq suff-stats)
+        rn  (+ r n)
+        nun (+ nu n)
+        mn  (/(+ (* r m) sum-x) rn)
+        sn  (+ s sum-x-sq (* r m m) (* -1 rn mn mn))
+        an  (/ nun 2)
+        bn  (/ sn 2)
+        scalesq (/ (* bn (+ rn 1)) (* an rn))
+        params {:degrees-of-freedom an :loc mn :scale (math/sqrt scalesq)}]
+    (cond (= (first event) <) (math/log (r/cdf (r/distribution :t params) b))
+          (= (first event) >) (math/log (- 1 (r/cdf (r/distribution :t params) b)))
+          :else (throw (Exception. "Only simple events with < allowed for now")))))
 
   gpm.proto/Incorporate
   (incorporate [this values]

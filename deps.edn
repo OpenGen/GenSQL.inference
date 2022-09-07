@@ -8,6 +8,7 @@
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.clojure/math.combinatorics {:mvn/version "0.1.6"}
         io.github.probcomp/metaprob {:git/sha "43c4bea80772ed8b2baa51cd5ac6c593a34a3a8b"}
+        generateme/fastmath {:mvn/version "2.1.9-SNAPSHOT" :exclusions [com.github.haifengl/smile-mkl]}
         net.cgrand/xforms {:mvn/version "0.19.2"}
         progrock/progrock {:mvn/version "0.1.2"}
         cljs-bean/cljs-bean {:mvn/version "1.7.0"}}
