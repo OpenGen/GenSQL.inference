@@ -347,20 +347,23 @@
 
   gpm.proto/LogProb
   (logprob [_ event]
-    (let [[operator a b] event]
-      (if (or (= (first event) <) (= (first event) >))
-        (let [modeled? (set (keys columns))
-              alpha (:alpha latents)
-              crp-counts (assoc (:counts latents) :aux alpha)
-              n (apply + (vals crp-counts))
-              crp-weights (reduce-kv (fn [m k v]
-                                       (assoc m k (math/log (/ v n))))
-                                     {}
-                                     crp-counts)
-              ;; XXX: only one column per event :/
-              lls (first (vals (column-logprob columns event {:add-aux true})))]
-          (utils/logsumexp (vals (merge-with + lls crp-weights))))
-        (throw (Exception. "View: Only simple events with < allowed for now")))))
+    (let [[operator a b] event
+          var-name (if (number? a) b a)]
+      (if (contains? columns (keyword var-name))
+        (if (or (= (first event) <) (= (first event) >))
+          (let [modeled? (set (keys columns))
+                alpha (:alpha latents)
+                crp-counts (assoc (:counts latents) :aux alpha)
+                n (apply + (vals crp-counts))
+                crp-weights (reduce-kv (fn [m k v]
+                                         (assoc m k (math/log (/ v n))))
+                                       {}
+                                       crp-counts)
+                ;; XXX: only one column per event :/
+                lls (first (vals (column-logprob columns event {:add-aux true})))]
+            (utils/logsumexp (vals (merge-with + lls crp-weights))))
+          (throw (Exception. "View: Only simple events with < allowed for now")))
+        0)))
 
   gpm.proto/Incorporate
   (incorporate [this values]

@@ -101,6 +101,16 @@
                     (gpm.proto/simulate view targets constraints)))
              (filter not-empty)
              (apply merge)))))
+
+  gpm.proto/LogProb
+  (logprob [_ event]
+        (reduce-kv (fn [logp _ view]
+                     ;; Filtering view variables happens naturally.
+                     (let [view-logp (gpm.proto/logprob view event)]
+                       (+ logp view-logp)))
+                   0
+                   views))
+
   gpm.proto/Incorporate
   (incorporate [this x]
     (let [row-id (gensym)]
