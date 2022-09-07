@@ -197,6 +197,9 @@
                 (utils/logsumexp (vals (merge-with +
                                                    (utils/log-normalize (:weights weights-lls))
                                                    (:logps weights-lls))))))))
+
+
+
   (simulate [this _ _]
     (let [;; Generates the CRP weights for the categories.
           crp-prior (->> categories
@@ -209,6 +212,46 @@
           ;; Sample a category assignment, then simulate a value from that category.
           category-key (primitives/simulate :log-categorical {:p crp-prior})]
       (gpm.proto/simulate (get categories' category-key) [var-name] {})))
+
+
+  gpm.proto/LogProb
+  (logprob [this event]
+    ;; What should arrive at this stage should only be a single event.
+    ;; 1) Calculate the unnormalized weights for each category, which is the log of the number
+    ;;    of values it contains.
+    ;; 2) Normalize the weights by subtracting the log of alpha + the number of values in the Column.
+    ;; 3) Add each weight to its respective category logpdf.
+    ;; 4) Logsumexp the weighted logprobs i.e. (logsumexp (+ weight-0 logpdf-0) ... (+ weight-k logpdf-k))
+
+    (let [[operator a b] event
+          _ (println "event")
+          _ (println event)]
+      (if (or (= (first event) <) (= (first event) >))
+        ;; Some copy-pasta from logpdf
+        (let [weights-lls
+              (reduce-kv (fn [m cat-name category]
+                           (-> m
+                               ;; A category's weight is proportional to how many elements it contains.
+                               (assoc-in [:weights cat-name] (math/log (-> category :suff-stats :n)))
+                               (assoc-in [:logps cat-name] (gpm.proto/logprob category event ))))
+                         ;; Generate an additional category in the Column, the weight of which is
+                         ;; defined by the concentration parameter of the Column, `alpha`.
+                         {:weights {:aux (math/log (get this :alpha 1))}
+                          :logps {:aux (gpm.proto/logprob (generate-category this) event )}}
+                         categories)
+              _ (prn "weights-lls")
+              _ (prn weights-lls)
+              _ (prn "(utils/log-normalize (:weights weights-lls))")
+              _ (prn (utils/log-normalize (:weights weights-lls)))
+              ]
+          ;; We want to sum probabilities across all categories, but since we are in the log space, we must
+          ;; take the logsumexp of the values, which allows us to perform the same calculation while staying
+          ;; in the log space (and thus limiting exposure to floating point errors for small exponentiated
+          ;; values).
+          (utils/logsumexp (vals (merge-with +
+                                             (utils/log-normalize (:weights weights-lls))
+                                             (:logps weights-lls)))))
+        (throw (Exception. "Only simple events with < allowed for now")))))
 
   gpm.proto/Incorporate
   (incorporate [this values]

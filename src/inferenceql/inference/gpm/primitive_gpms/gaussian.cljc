@@ -88,8 +88,6 @@
   (logprob
     [this event]
     (let [[operator a b] event
-        _ (println "event")
-        _ (println event)
         m    (:m hyperparameters)
         r    (:r hyperparameters)
         s    (:s hyperparameters)

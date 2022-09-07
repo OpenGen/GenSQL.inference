@@ -4,7 +4,8 @@
             [clojure.test :as test :refer [are deftest is]]
             [inferenceql.inference.utils :as utils]
             [inferenceql.inference.gpm :as gpm]
-            [inferenceql.inference.gpm.proto :as gpm.proto]))
+            [inferenceql.inference.gpm.proto :as gpm.proto]
+            [fastmath.random :as r]))
 
 (def data-bernoulli
   [true true true true false false])
@@ -171,3 +172,68 @@
     "flip" column-bernoulli
     "color" column-categorical
     "height" column-gaussian))
+
+(def latents2
+  {:alpha 0
+   :counts {:one 6}
+   :y {0 :one
+       1 :one
+       2 :one
+       3 :one
+       4 :one
+       5 :one}})
+
+(def hypers-gaussian2
+  {:m 0 :r 1 :s 1 :nu 1})
+
+(def column-gaussian2
+  (column/construct-column-from-latents "height"
+                                        :gaussian
+                                        hypers-gaussian2
+                                        latents2
+                                        (into {} (map-indexed vector data-gaussian))))
+
+
+
+(deftest logprob
+  (is (number? (gpm/logprob column-gaussian2 [< (symbol "x") 1])))
+  (is (number? (gpm/logprob column-gaussian2 [> (symbol "x") 2]))))
+
+;This fails because for some reason, the weight of the aux table is not 
+#_(deftest logprob-numerical
+  (let [a 1
+        b 2
+        c 3
+        s1 <
+        s2 >
+        hyperparameters hypers-gaussian
+        m    (:m hyperparameters)
+        r    (:r hyperparameters)
+        s    (:s hyperparameters)
+        nu   (:nu hyperparameters)
+        suff-stats {:n (count data-gaussian)
+                    :sum-x (reduce + data-gaussian)
+                    :sum-x-sq (reduce + (map #(* % %) data-gaussian))}
+        n        (:n suff-stats)
+        sum-x    (:sum-x suff-stats)
+        sum-x-sq (:sum-x-sq suff-stats)
+        rn  (+ r n)
+        nun (+ nu n)
+        mn  (/(+ (* r m) sum-x) rn)
+        sn  (+ s sum-x-sq (* r m m) (* -1 rn mn mn))
+        an  (/ nun 2)
+        bn  (/ sn 2)
+        scalesq (/ (* bn (+ rn 1)) (* an rn))
+        params {:degrees-of-freedom an :loc mn :scale (math/sqrt scalesq)}]
+  (is (= (math/log (r/cdf (r/distribution :t params) a ))
+         (gpm/logprob column-gaussian2 [s1 (symbol "x") a])))
+  (is (= (math/log (r/cdf (r/distribution :t params) b))
+         (gpm/logprob column-gaussian2 [s1 (symbol "x") b])))
+  (is (= (math/log (r/cdf (r/distribution :t params) c))
+         (gpm/logprob column-gaussian2 [s1 (symbol "x") c])))
+  (is (= (math/log (- 1 (r/cdf (r/distribution :t params) a)))
+         (gpm/logprob column-gaussian2 [s2 (symbol "x") a])))
+  (is (= (math/log (- 1 (r/cdf (r/distribution :t params) b)))
+         (gpm/logprob column-gaussian2 [s2 (symbol "x") b])))
+  (is (= (math/log (- 1 (r/cdf (r/distribution :t params) c)))
+         (gpm/logprob column-gaussian2 [s2 (symbol "x") c])))))
