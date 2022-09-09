@@ -30,10 +30,14 @@
   ([columns event]
    (column-logprob columns event {:add-aux false}))
   ([columns event {:keys [add-aux]}]
-  ;; XXX:
-  (let [[operator a b] event
-        var-name (if (number? a) b a)]
-        {(keyword var-name) (column/category-logprob (get columns var-name) event {:add-aux add-aux})})))
+   ;; XXX:
+   (prn "event" event)
+   (let [[operator a b] event
+         var-name (if (number? a) b a)
+         var-kw (keyword var-name)]
+     (prn "var-name" var-name)
+     (prn "columns" (keys columns))
+     {var-kw (column/category-logprob (get columns var-kw) event {:add-aux add-aux})})))
 
 (defn add-aux-categories
   "Add m auxiliary categories to the given view."
@@ -234,46 +238,46 @@
   current categories in the view, as well as `m` specified auxiliary ones.
   This is Algorithm 8 from http://www.stat.columbia.edu/npbayes/papers/neal_sampling.pdf"
   ([view m]
-    (infer-row-category-view view m nil))
+   (infer-row-category-view view m nil))
   ([view m supplied-rowids]
    (let [row-ids (shuffle (-> view :latents :y keys))
          all-row-ids (nil? supplied-rowids)]
-      ;; For each row in the view:
-      ;; 1.) Remove the row from the current category.
-      ;; 2.) Calculate the logpdf of that row being generated
-      ;;     by each category and weight with CRP weighting.
-      ;; 3.) Sample new category assignment for row, and
-      ;;     update latents accordingly.
-      (reduce (fn [view' row-id]
-                (if (or all-row-ids (contains? supplied-rowids row-id))
-                  (let [row-data (get-data view' row-id)
-                        latents (:latents view')
-                        y (get-in latents [:y row-id])
-                        singleton? (= 1 (get-in latents [:counts y]))
-                        m (if singleton? (dec m) m)
-                        ;; Remove the current row from the model.
-                        view-minus (-> view'
-                                       (unincorporate-from-category row-data y row-id)
-                                       ;; Add auxiliary categories, if necessary. If y
-                                       ;; represents a singleton category and m is 1,
-                                       ;; then no new categories are added and y is treated
-                                       ;; like the auxiliary category (since it is now empty).
-                                       (add-aux-categories m))
-                        ;; Get logpdf that each category generated the datum.
-                        lls (-> view-minus
-                                (:columns)
-                                (column-logpdfs row-data))
-                        crp-weights (gpm.utils/crp-weights view-minus m)
-                        logps {:p (utils/log-normalize (merge-with + lls crp-weights))}
-                        y' (primitives/simulate :log-categorical logps)]
-                    (if (= y y')
-                      view'
-                      (-> view-minus
-                          (incorporate-into-category row-data y' row-id)
-                          (filter-empty-categories))))
-                  view'))
-                view
-                (seq row-ids)))))
+     ;; For each row in the view:
+     ;; 1.) Remove the row from the current category.
+     ;; 2.) Calculate the logpdf of that row being generated
+     ;;     by each category and weight with CRP weighting.
+     ;; 3.) Sample new category assignment for row, and
+     ;;     update latents accordingly.
+     (reduce (fn [view' row-id]
+               (if (or all-row-ids (contains? supplied-rowids row-id))
+                 (let [row-data (get-data view' row-id)
+                       latents (:latents view')
+                       y (get-in latents [:y row-id])
+                       singleton? (= 1 (get-in latents [:counts y]))
+                       m (if singleton? (dec m) m)
+                       ;; Remove the current row from the model.
+                       view-minus (-> view'
+                                      (unincorporate-from-category row-data y row-id)
+                                      ;; Add auxiliary categories, if necessary. If y
+                                      ;; represents a singleton category and m is 1,
+                                      ;; then no new categories are added and y is treated
+                                      ;; like the auxiliary category (since it is now empty).
+                                      (add-aux-categories m))
+                       ;; Get logpdf that each category generated the datum.
+                       lls (-> view-minus
+                               (:columns)
+                               (column-logpdfs row-data))
+                       crp-weights (gpm.utils/crp-weights view-minus m)
+                       logps {:p (utils/log-normalize (merge-with + lls crp-weights))}
+                       y' (primitives/simulate :log-categorical logps)]
+                   (if (= y y')
+                     view'
+                     (-> view-minus
+                         (incorporate-into-category row-data y' row-id)
+                         (filter-empty-categories))))
+                 view'))
+             view
+             (seq row-ids)))))
 
 (defrecord View [columns latents assignments]
   gpm.proto/GPM
@@ -350,7 +354,7 @@
     (let [[operator a b] event
           var-name (if (number? a) b a)]
       (if (contains? columns (keyword var-name))
-        (if (or (= (first event) <) (= (first event) >))
+        (if (or (= (first event) '<) (= (first event) '>))
           (let [modeled? (set (keys columns))
                 alpha (:alpha latents)
                 crp-counts (assoc (:counts latents) :aux alpha)

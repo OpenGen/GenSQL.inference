@@ -82,46 +82,46 @@
       (primitives/simulate :gaussian {:mu mu :sigma (math/pow rho -0.5)})))
 
 
-;(distribution :beta {:alpha 1.0, :beta 1.0})
-;>  :t (:degrees-of-freedom),
+  ;;(distribution :beta {:alpha 1.0, :beta 1.0})
+  ;;>  :t (:degrees-of-freedom),
   gpm.proto/LogProb
   (logprob
-    [this event]
+    [_ event]
+    (prn event)
     (let [[operator a b] event
-        m    (:m hyperparameters)
-        r    (:r hyperparameters)
-        s    (:s hyperparameters)
-        nu   (:nu hyperparameters)
-        n        (:n suff-stats)
-        sum-x    (:sum-x suff-stats)
-        sum-x-sq (:sum-x-sq suff-stats)
-        rn  (+ r n)
-        nun (+ nu n)
-        mn  (/(+ (* r m) sum-x) rn)
-        sn  (+ s sum-x-sq (* r m m) (* -1 rn mn mn))
-        an  (/ nun 2)
-        bn  (/ sn 2)
-        scalesq (/ (* bn (+ rn 1)) (* an rn))
-        params {:degrees-of-freedom an :loc mn :scale (math/sqrt scalesq)}]
-    (cond (= (first event) <) (math/log (r/cdf (r/distribution :t params) b))
-          (= (first event) >) (math/log (- 1 (r/cdf (r/distribution :t params) b)))
-          :else (throw (Exception. "Only simple events with < allowed for now")))))
+          {:keys [m r s nu]} hyperparameters
+          {:keys [n sum-x sum-x-sq]} suff-stats
+          value (cond (and (symbol? a) (number? b)) b
+                      (and (number? b) (symbol? a)) a
+                      :else (throw (ex-info "Strange event" {:event event})))
+          rn  (+ r n)
+          nun (+ nu n)
+          mn  (/(+ (* r m) sum-x) rn)
+          sn  (+ s sum-x-sq (* r m m) (* -1 rn mn mn))
+          an  (/ nun 2)
+          bn  (/ sn 2)
+          scalesq (/ (* bn (+ rn 1)) (* an rn))
+          params {:degrees-of-freedom an :loc mn :scale (math/sqrt scalesq)}]
+      (condp = operator
+        '< (math/log (r/cdf (r/distribution :t params)
+                            value))
+        '> (math/log (- 1 (r/cdf (r/distribution :t params)
+                                 value)))
+        (throw (Exception. "Only simple events with < allowed for now")))))
 
   gpm.proto/Incorporate
   (incorporate [this values]
     (let [x (get values var-name)]
-      (-> this
-          (assoc :suff-stats (-> suff-stats
-                                 (update :n inc)
-                                 (update :sum-x #(+ % x))
-                                 (update :sum-x-sq #(+ % (* x x))))))))
+      (assoc this :suff-stats (-> suff-stats
+                                  (update :n inc)
+                                  (update :sum-x #(+ % x))
+                                  (update :sum-x-sq #(+ % (* x x)))))))
   (unincorporate [this values]
     (let [x (get values var-name)]
-      (-> this
-          (assoc :suff-stats (-> suff-stats
-                                 (update :n dec)
-                                 (update :sum-x #(- % x))
-                                 (update :sum-x-sq #(- % (* x x))))))))
+      (assoc this :suff-stats (-> suff-stats
+                                  (update :n dec)
+                                  (update :sum-x #(- % x))
+                                  (update :sum-x-sq #(- % (* x x)))))))
 
   gpm.proto/Score
   (logpdf-score [_]

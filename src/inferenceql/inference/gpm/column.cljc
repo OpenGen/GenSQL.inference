@@ -27,7 +27,7 @@
         stattype (:stattype column)
         var-name (:var-name column)
         hyperparameters (:hyperparameters column)]
-      (pgpms/->pGPM stattype var-name :hyperparameters hyperparameters :options metadata)))
+    (pgpms/->pGPM stattype var-name :hyperparameters hyperparameters :options metadata)))
 
 (defn add-category
   "Adds a category under the given symbol name to the specified column."
@@ -50,18 +50,18 @@
                               (if (some? datum)
                                 (let [category (get ys row-id)]
                                   (update acc
-                                           category
-                                           #(gpm.proto/incorporate
-                                              %
-                                              {var-name datum})))
-                                  acc))
-                             categories
-                             data)
-          assignments (reduce-kv (fn [assignments' row-id data]
-                                   (let [y (get ys row-id)]
-                                     (update-in assignments' [{var-name data} y] (fnil inc 0))))
-                                 {}
-                                 data)]
+                                          category
+                                          #(gpm.proto/incorporate
+                                            %
+                                            {var-name datum})))
+                                acc))
+                            categories
+                            data)
+        assignments (reduce-kv (fn [assignments' row-id data]
+                                 (let [y (get ys row-id)]
+                                   (update-in assignments' [{var-name data} y] (fnil inc 0))))
+                               {}
+                               data)]
     (-> column
         (assoc :categories categories')
         (assoc :assignments assignments))))
@@ -76,10 +76,10 @@
                              :aux
                              (generate-category column))
                       (:categories column))]
-   (reduce-kv (fn [logprobs cat-name category]
-                (assoc logprobs cat-name (gpm.proto/logprob category event)))
-              {}
-              categories))))
+     (reduce-kv (fn [logprobs cat-name category]
+                  (assoc logprobs cat-name (gpm.proto/logprob category event)))
+                {}
+                categories))))
 
 (defn category-logpdfs
   "Calculates the logpdf of the target in each of the Column categories."
@@ -91,10 +91,10 @@
                              :aux
                              (generate-category column))
                       (:categories column))]
-   (reduce-kv (fn [logpdfs cat-name category]
-                (assoc logpdfs cat-name (gpm.proto/logpdf category target {})))
-              {}
-              categories))))
+     (reduce-kv (fn [logpdfs cat-name category]
+                  (assoc logpdfs cat-name (gpm.proto/logpdf category target {})))
+                {}
+                categories))))
 
 (defn update-hypers
   "Update the hyperparameters across all categories in a Column GPM."
@@ -238,10 +238,9 @@
     ;; 3) Add each weight to its respective category logpdf.
     ;; 4) Logsumexp the weighted logprobs i.e. (logsumexp (+ weight-0 logpdf-0) ... (+ weight-k logpdf-k))
 
-    (let [[operator a b] event
-          _ (println "event")
-          _ (println event)]
-      (if (or (= (first event) <) (= (first event) >))
+    (let [[operator a b] event]
+      (prn "logprob event" event)
+      (if (contains? #{'< '>} operator)
         ;; Some copy-pasta from logpdf
         (let [weights-lls
               (reduce-kv (fn [m cat-name category]
@@ -266,7 +265,7 @@
           (utils/logsumexp (vals (merge-with +
                                              (utils/log-normalize (:weights weights-lls))
                                              (:logps weights-lls)))))
-        (throw (Exception. "Only simple events with < allowed for now")))))
+        (throw (ex-info "Only simple events with < allowed for now" {})))))
 
   gpm.proto/Incorporate
   (incorporate [this values]
@@ -343,50 +342,50 @@
   ([var-name stattype hyperparameters latents data]
    (construct-column-from-latents var-name stattype hyperparameters latents data {:options {} :crosscat false}))
   ([var-name stattype hyperparameters latents data {:keys [options crosscat]}]
-    (let [ys (:y latents) ; Row-category assignments.
-          category-names (keys (:counts latents))
-          ;; Add row-identifiers to the data, if not already present.
-          data (if (map? data) data (zipmap (range) data))
-          metadata (if (= stattype :categorical)
-                     (get options var-name)
-                     {})
-          ;; Generate empty categories, before incorporating data.
-          categories (into {} (map vector
-                                   category-names
-                                   (repeatedly
-                                     #(pgpms/->pGPM stattype var-name :hyperparameters hyperparameters :options metadata))))
-          ;; Incorporate the data accordingly, based on the latents spec.
-          categories' (reduce (fn [acc [row-id datum]]
-                                (if (some? datum) ; Only incorporate non-nil values.
-                                  (let [category (get ys row-id)]
-                                     (update acc
-                                             category
-                                             #(gpm.proto/incorporate
-                                                %
-                                                {var-name datum})))
-                                   acc))
-                               categories
-                               data)
-          ;; The hyper-grid is defined on initialization because there is no need to update or change it,
-          ;; unless you are adding or removing values from the Column. This saves a lot of computation when
-          ;; the hyper-grid is used in column hyperparameter inference.
-          hyper-grid (pgpms/hyper-grid stattype (remove nil? (vals data)))
-          ;; assignments is used to treat values as items in a bag. We need to keep track of how many of each
-          ;; value are in each category. An example of its form for a bernoulli variable looks like the below:
-          ;;        {{"flip" true} {:cat-0 4       There are four instances of this value in :cat-0.
-          ;;                        :cat-1 2}}     There are two instances of this value in :cat-1.
-          assignments (reduce-kv (fn [assignments' row-id data]
-                                   (let [y (get-in latents [:y row-id])]
-                                     (update-in assignments' [{var-name data} y] (fnil inc 0))))
-                                 {}
-                                 data)
-          column (->Column var-name stattype categories' assignments hyperparameters hyper-grid metadata)]
-      ;; If this Column is meant to be included in a CrossCat model, then we record the data, otherwise,
-      ;; it isn't necessary. This may be deprecated as implementation of higher-level CrossCat modules
-      ;; continues.
-      (if crosscat
-        (assoc column :data data)
-        column))))
+   (let [ys (:y latents) ; Row-category assignments.
+         category-names (keys (:counts latents))
+         ;; Add row-identifiers to the data, if not already present.
+         data (if (map? data) data (zipmap (range) data))
+         metadata (if (= stattype :categorical)
+                    (get options var-name)
+                    {})
+         ;; Generate empty categories, before incorporating data.
+         categories (into {} (map vector
+                                  category-names
+                                  (repeatedly
+                                   #(pgpms/->pGPM stattype var-name :hyperparameters hyperparameters :options metadata))))
+         ;; Incorporate the data accordingly, based on the latents spec.
+         categories' (reduce (fn [acc [row-id datum]]
+                               (if (some? datum) ; Only incorporate non-nil values.
+                                 (let [category (get ys row-id)]
+                                   (update acc
+                                           category
+                                           #(gpm.proto/incorporate
+                                             %
+                                             {var-name datum})))
+                                 acc))
+                             categories
+                             data)
+         ;; The hyper-grid is defined on initialization because there is no need to update or change it,
+         ;; unless you are adding or removing values from the Column. This saves a lot of computation when
+         ;; the hyper-grid is used in column hyperparameter inference.
+         hyper-grid (pgpms/hyper-grid stattype (remove nil? (vals data)))
+         ;; assignments is used to treat values as items in a bag. We need to keep track of how many of each
+         ;; value are in each category. An example of its form for a bernoulli variable looks like the below:
+         ;;        {{"flip" true} {:cat-0 4       There are four instances of this value in :cat-0.
+         ;;                        :cat-1 2}}     There are two instances of this value in :cat-1.
+         assignments (reduce-kv (fn [assignments' row-id data]
+                                  (let [y (get-in latents [:y row-id])]
+                                    (update-in assignments' [{var-name data} y] (fnil inc 0))))
+                                {}
+                                data)
+         column (->Column var-name stattype categories' assignments hyperparameters hyper-grid metadata)]
+     ;; If this Column is meant to be included in a CrossCat model, then we record the data, otherwise,
+     ;; it isn't necessary. This may be deprecated as implementation of higher-level CrossCat modules
+     ;; continues.
+     (if crosscat
+       (assoc column :data data)
+       column))))
 
 (defn column?
   "Checks if the given GPM is a Column."
