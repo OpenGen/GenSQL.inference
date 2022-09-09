@@ -1,5 +1,6 @@
 (ns inferenceql.inference.gpm.primitive-gpms.gaussian
   (:require [clojure.math :as math]
+            [inferenceql.inference.event :as event]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [fastmath.random :as r]
             [inferenceql.inference.primitives :as primitives]
@@ -85,8 +86,7 @@
   ;;(distribution :beta {:alpha 1.0, :beta 1.0})
   ;;>  :t (:degrees-of-freedom),
   gpm.proto/LogProb
-  (logprob
-    [_ event]
+  (logprob [_ event]
     (prn event)
     (let [[operator a b] event
           {:keys [m r s nu]} hyperparameters
@@ -140,7 +140,22 @@
 
   gpm.proto/Variables
   (variables [{:keys [var-name]}]
-    #{var-name}))
+    #{var-name})
+
+  gpm.proto/MutualInfo
+  (mutual-info [this event-a event-b]
+    (let [operator first]
+      (when-not (and (event/simple? event-a)
+                     (event/simple? event-b))
+        (throw (ex-info (str "Only simple events allowed! Operator was: " operator) {}))))
+    (let [lpa1 (gpm.proto/logprob this event-a)
+          lpb1 (gpm.proto/logprob this event-b)
+          pa1 (math/exp lpa1)
+          pb1 (math/exp lpb1)
+          pa0 (- 1 pa1)
+          pb0 (- 1 pb1)
+          lpab1 (gpm.proto/logprob this `(~'and ~event-a ~event-b))]
+      (for []))))
 
 (defn gaussian?
   "Checks if the given pGPM is Gaussian."
