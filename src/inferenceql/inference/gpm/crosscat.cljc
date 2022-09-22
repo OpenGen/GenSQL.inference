@@ -78,29 +78,35 @@
   gpm.proto/GPM
   (logpdf [_ targets constraints]
     (let [intersection (set/intersection (set (keys targets)) (set (keys constraints)))]
-      (if (not-empty intersection)
-        (throw (ex-info (str "Targets and constraints must be unique! "
-                             "These are shared: "
-                             (seq intersection))
-                        {:targets targets :constraints constraints}))
+      ;; If targets are the same as constraints, the logpdf is 0.
+      (cond
+        (= targets constraints)
+        0.0
+        ;; If the targets and constraints are not equal but the overlapping parts are,
+        ;; just remove the overlapping keys and recur the scores. 
+        (every? (fn [shared-key]
+                  (= (shared-key targets)
+                     (shared-key constraints)))
+                intersection)
         (reduce-kv (fn [logp _ view]
                      ;; Filtering view variables happens naturally.
-                     (let [view-logp (gpm.proto/logpdf view targets constraints)]
+                     (let [view-logp (gpm.proto/logpdf view
+                                                       (apply dissoc targets intersection)
+                                                       constraints)]
                        (+ logp view-logp)))
-                   0
-                   views))))
+                   0.0
+                   views)
+        ;; If the intersection keys map to different values, the score is -Inf.
+        :else ##-Inf)))
   (simulate [_ targets constraints]
-    (let [intersection (set/intersection (set targets) (set (keys constraints)))]
-      (if (not-empty intersection)
-        (throw (ex-info (str "Targets and constraints must be unique! "
-                             "These are shared: "
-                             (seq intersection))
-                        {:targets targets :constraints constraints}))
+    ;; Catch overlap of targets and constraints and assure constraint is sampled. 
+    (let [intersection (set/intersection (set targets) (set (keys constraints)))
+          unconstrained-targets (vec (remove intersection (set targets)))]
         (->> views
              (map (fn [[_ view]]
-                    (gpm.proto/simulate view targets constraints)))
+                    (gpm.proto/simulate view unconstrained-targets constraints)))
              (filter not-empty)
-             (apply merge)))))
+             (apply merge (select-keys constraints intersection)))))
   gpm.proto/Incorporate
   (incorporate [this x]
     (let [row-id (gensym)]
