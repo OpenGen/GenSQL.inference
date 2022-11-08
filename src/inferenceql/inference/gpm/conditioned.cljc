@@ -7,14 +7,14 @@
     (let [merged-conditions (merge conditions logpdf-conditions)]
       (gpm.proto/logpdf gpm targets merged-conditions)))
 
+  (simulate [_ targets simulate-conditions]
+    (let [merged-conditions (merge conditions simulate-conditions)]
+      (gpm.proto/simulate gpm targets merged-conditions)))
+
   gpm.proto/LogProb
     (logprob [_ targets logprob-conditions]
       (let [merged-conditions (merge conditions logprob-conditions)]
        (gpm.proto/logprob gpm targets merged-conditions)))
-
-  (simulate [_ targets simulate-conditions]
-    (let [merged-conditions (merge conditions simulate-conditions)]
-      (gpm.proto/simulate gpm targets merged-conditions)))
 
   gpm.proto/Variables
   (variables [_]
