@@ -12,9 +12,12 @@
       (gpm.proto/simulate gpm targets merged-conditions)))
 
   gpm.proto/LogProb
-    (logprob [_ targets logprob-conditions]
-      (let [merged-conditions (merge conditions logprob-conditions)]
-       (gpm.proto/logprob gpm targets merged-conditions)))
+  (logprob [_ event]
+    (def conditions_event `(~'and ~@(map (fn [[variable value]]
+      `(~'= ~variable ~value))
+      conditions)))
+      (let [merged-event `(~'and ~conditions_event event)]
+       (gpm.proto/logprob gpm merged-event)))
 
   gpm.proto/Variables
   (variables [_]
