@@ -39,6 +39,23 @@
     [:x :y] {:y 1}
     [:x :y] {:x 0 :y 1}))
 
+(deftest logprob-targets
+  (are [targets conditions]
+      (let [model (reify gpm.proto/LogProb
+                    (logprob [_ actual _]
+                      actual))
+            conditioned-model (conditioned/condition model conditions)]
+        (= targets (gpm/logprob conditioned-model targets conditions)))
+    [] {}
+    [:x] {}
+    [] {:x 0}
+    [:x] {:x 0}
+    [:x :y] {}
+    [] {:x 0}
+    [:x :y] {:x 0}
+    [:x :y] {:y 1}
+    [:x :y] {:x 0 :y 1}))
+
 (deftest logpdf-conditions
   (are [condition-conditions conditions expected]
       (let [model (reify gpm.proto/GPM
@@ -46,6 +63,22 @@
                       actual))
             conditioned-model (conditioned/condition model condition-conditions)]
         (= expected (gpm/logpdf conditioned-model [:x] conditions)))
+    {} {} {}
+    {} {:x 0} {:x 0}
+    {:x 0} {} {:x 0}
+    {:x 0} {:x 1} {:x 1}
+    {:x 0} {:y 1} {:x 0 :y 1}
+    {:y 1} {:x 0} {:x 0 :y 1}
+    {:x 0 :z 2} {:y 1} {:x 0 :y 1 :z 2}
+    {:x 0} {:y 1 :z 2} {:x 0 :y 1 :z 2}))
+
+(deftest logprob-conditions
+  (are [condition-conditions conditions expected]
+      (let [model (reify gpm.proto/LogProb
+                    (logprob [_ _ actual]
+                      actual))
+            conditioned-model (conditioned/condition model condition-conditions)]
+        (= expected (gpm/logprob conditioned-model [:x] conditions)))
     {} {} {}
     {} {:x 0} {:x 0}
     {:x 0} {} {:x 0}
@@ -90,6 +123,38 @@
 (deftest logpdf-condition-twice
   (are [c1 c2 c3 expected]
       (let [model (-> (reify gpm.proto/GPM
+                        (simulate [_ _ actual]
+                          actual))
+                      (conditioned/condition c1)
+                      (conditioned/condition c2))]
+        (= expected (gpm/simulate model [:x] c3)))
+    {} {} {} {}
+    {:x 0} {} {} {:x 0}
+    {} {:x 0} {} {:x 0}
+    {} {} {:x 0} {:x 0}
+    {:x 0} {:x 1} {} {:x 1}
+    {:x 0} {} {:x 1} {:x 1}
+    {} {:x 0} {:x 1} {:x 1}))
+
+(deftest logprob-condition
+  (are [c1 c2 expected]
+      (let [model (-> (reify gpm.proto/LogProb
+                        (simulate [_ _ actual]
+                          actual))
+                      (conditioned/condition c1))]
+        (= expected (gpm/simulate model [:x] c2)))
+    {} {} {}
+    {} {:x 0} {:x 0}
+    {:x 0} {} {:x 0}
+    {:x 0} {:x 1} {:x 1}
+    {:x 0} {:y 1} {:x 0 :y 1}
+    {:y 1} {:x 0} {:x 0 :y 1}
+    {:x 0 :z 2} {:y 1} {:x 0 :y 1 :z 2}
+    {:x 0} {:y 1 :z 2} {:x 0 :y 1 :z 2}))
+
+(deftest logprob-condition-twice
+  (are [c1 c2 c3 expected]
+      (let [model (-> (reify gpm.proto/LogProb
                         (simulate [_ _ actual]
                           actual))
                       (conditioned/condition c1)

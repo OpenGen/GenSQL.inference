@@ -3,6 +3,7 @@
 (defprotocol GPM
   "A simple protocol for defining a GPM."
   (logpdf             [this targets constraints])
+  (logprob            [this targets constraints])
   (simulate           [this targets constraints])
   (mutual-information [this target-a target-b constraints n-samples]))
 
