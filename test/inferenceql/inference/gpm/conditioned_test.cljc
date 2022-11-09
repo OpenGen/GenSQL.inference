@@ -55,6 +55,18 @@
     {:x 0 :z 2} {:y 1} {:x 0 :y 1 :z 2}
     {:x 0} {:y 1 :z 2} {:x 0 :y 1 :z 2}))
 
+(deftest logprob-conditions
+  (are [condition-conditions event expected]
+      (let [model (reify gpm.proto/LogProb
+                  (logprob [_ actual]
+                  actual))
+              conditioned-model (conditioned/condition model condition-conditions)]
+          (= expected (gpm/logprob conditioned-model event)))
+
+  {:x 0} '(= :y 0) '(and (= :x 0) (= :y 0))
+  {:x 0 :y 0} '(= :z 1) '(and (and (= :x 0) (= :y 0)) (= :z 1))
+  ))
+
 (deftest simulate-conditions
   (are [c1 c2 expected]
       (let [model (reify gpm.proto/GPM

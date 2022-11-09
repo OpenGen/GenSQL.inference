@@ -13,11 +13,15 @@
 
   gpm.proto/LogProb
   (logprob [_ event]
-    (def conditions_event `(~'and ~@(map (fn [[variable value]]
-      `(~'= ~variable ~value))
-      conditions)))
-      (let [merged-event `(~'and ~conditions_event event)]
-       (gpm.proto/logprob gpm merged-event)))
+      (let [
+        expression_list (map (fn [[variable value]] `(~'= ~variable ~value)) conditions)
+        conditions_event
+        (if (< 1 (count expression_list))
+          `(~'and ~@expression_list)
+          (first expression_list))
+        merged-event `(~'and ~conditions_event ~event)
+      ]
+      (gpm.proto/logprob gpm merged-event)))
 
   gpm.proto/Variables
   (variables [_]
