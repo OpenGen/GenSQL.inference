@@ -22,6 +22,7 @@
     (is (= 1.0 (math/exp (gpm.proto/logpdf gaussian-pgpm targets targets))))
     (is (= ##-Inf (gpm.proto/logpdf gaussian-pgpm targets constraints)))))
 
+
 (deftest simulate
   (let [n 10000
         targets []
@@ -84,3 +85,44 @@
 
 (deftest variables
   (is (= #{var-name} (gpm/variables gaussian-pgpm))))
+
+#?(:clj (deftest logprob
+  (let [a 1
+        b 2
+        c 3
+        s1 '<
+        s2 '>
+        hyperparameters {:m 0 :r 1 :s 1 :nu 1}
+        m    (:m hyperparameters)
+        r    (:r hyperparameters)
+        s    (:s hyperparameters)
+        nu   (:nu hyperparameters)
+        suff-stats {:n 0 :sum-x 0 :sum-x-sq 0}
+        n        (:n suff-stats)
+        sum-x    (:sum-x suff-stats)
+        sum-x-sq (:sum-x-sq suff-stats)
+        ; Manuall converting parametes, following https://github.com/probcomp/cgpm/blob/master/tests/test_teh_murphy.py
+        ; for the conversion of the hyperparameters into the parameters for a Student t
+        ; distribution (see also: https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf)
+        rn  (+ r n)
+        nun (+ nu n)
+        loc  (/(+ (* r m) sum-x) rn)
+        sn  (+ s sum-x-sq (* r m m) (* -1 rn loc loc))
+        an  (/ nun 2)
+        degrees-of-freedom  (* 2 an)
+        bn  (/ sn 2)
+        scale (math/sqrt (/ (* bn (+ rn 1)) (* an rn)))]
+    (is (= (math/log (gaussian/student-t-cdf a degrees-of-freedom loc scale))
+           (gpm/logprob gaussian-pgpm [s1 (symbol "x") a])))
+    (is (= (math/log (gaussian/student-t-cdf b degrees-of-freedom loc scale))
+           (gpm/logprob gaussian-pgpm [s1 (symbol "x") b])))
+    (is (= (math/log (gaussian/student-t-cdf c degrees-of-freedom loc scale))
+           (gpm/logprob gaussian-pgpm [s1 (symbol "x") c])))
+    (is (= (math/log (- 1 (gaussian/student-t-cdf a degrees-of-freedom loc scale)))
+           (gpm/logprob gaussian-pgpm [s2 (symbol "x") a])))
+    (is (= (math/log (- 1 (gaussian/student-t-cdf b degrees-of-freedom loc scale)))
+           (gpm/logprob gaussian-pgpm [s2 (symbol "x") b])))
+    (is (= (math/log (- 1 (gaussian/student-t-cdf c degrees-of-freedom loc scale)))
+           (gpm/logprob gaussian-pgpm [s2 (symbol "x") c])))
+    (is (= (math/log (gaussian/student-t-cdf a degrees-of-freedom loc scale))
+           (gpm/logprob gaussian-pgpm ['not [s2 (symbol "x") a]]))))))
