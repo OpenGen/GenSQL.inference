@@ -1,5 +1,6 @@
 (ns inferenceql.inference.gpm.primitive-gpms.categorical
   (:require [clojure.math :as math]
+            [inferenceql.inference.event :as event]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.primitives :as primitives]
             [inferenceql.inference.utils :as utils]))
@@ -58,6 +59,14 @@
          (- (primitives/gammaln (+ a n)))
          lg
          (* -1 k (primitives/gammaln alpha)))))
+
+  gpm.proto/LogProb
+  (logprob [this event]
+    (if (event/negated? event)
+      (utils/log-diff 0 (gpm.proto/logprob this (second event)))
+      (if (event/equality? event)
+        (gpm.proto/logpdf this (event/eq-event-map event) {})
+        (throw (ex-info "Cannot compute the log probability of a non-equality event." {:event event})))))
 
   gpm.proto/Variables
   (variables [{:keys [var-name]}]
