@@ -168,3 +168,8 @@
                  weights))
     (let [z (logsumexp weights)]
       (map #(- % z) weights))))
+
+(defn log-diff
+  "Exp, take the difference between to values, then return to the log domain."
+  [a b]
+  (math/log (- (math/exp a) (math/exp b))))
