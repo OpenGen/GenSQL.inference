@@ -79,3 +79,9 @@
 
 (deftest variables
   (is (= #{var-name} (gpm/variables categorical-pgpm))))
+
+(deftest logprob
+  (let [event ['= "categorical" "a"]
+        threshold 1e-5]
+    (is (utils/almost-equal? (double (/ 1 3)) (math/exp (gpm.proto/logprob categorical-pgpm event)) utils/relerr threshold))
+    (is (utils/almost-equal? (double (/ 2 3)) (math/exp (gpm.proto/logprob categorical-pgpm ['not event])) utils/relerr threshold))))
