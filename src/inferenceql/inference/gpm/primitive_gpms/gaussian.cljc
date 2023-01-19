@@ -1,8 +1,12 @@
 (ns inferenceql.inference.gpm.primitive-gpms.gaussian
-  (:require [clojure.math :as math]
+  (:require
+            [clojure.math :as math]
+            [inferenceql.inference.event :as event]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.primitives :as primitives]
-            [inferenceql.inference.utils :as utils]))
+            [inferenceql.inference.event :as event]
+            [inferenceql.inference.utils :as utils])
+  #?(:clj (:import [org.apache.commons.math3.distribution TDistribution])))
 
 (defn posterior-hypers
   "Given sufficient statistics and the current hyperparameters,
@@ -34,11 +38,17 @@
                (- (math/log r))))
      (primitives/gammaln (/ nu 2))))
 
+#?(:clj (defn student-t-cdf
+  [value df loc scale]
+  (let [scaled-and-shifted (/ (- value loc) scale)]
+      (.cumulativeProbability (TDistribution. df) scaled-and-shifted))))
+
 ;; The Gaussian pGPM is defined as a Normal-Inverse-Gamma distribution,
 ;; which allows us to perform inference on a gaussian variable for which
 ;; both mean and variance are unknown.
 ;; Follow http://www.stats.ox.ac.uk/~teh/research/notes/GaussianInverseGamma.pdf
 ;; for further information.
+
 (defrecord Gaussian [var-name suff-stats hyperparameters]
   gpm.proto/GPM
   (logpdf   [_ targets constraints]
@@ -76,21 +86,50 @@
           mu (primitives/simulate :gaussian {:mu m-n :sigma (/ 1 (math/pow (* rho r-n) 0.5))})]
       (primitives/simulate :gaussian {:mu mu :sigma (math/pow rho -0.5)})))
 
+
+  gpm.proto/LogProb
+  #?(:clj (logprob [this event]
+    (if (event/negated? event)
+      (utils/log-diff 0 (gpm.proto/logprob this (second event)))
+      (let [[operator a b] event
+            {:keys [m r s nu]} hyperparameters
+            {:keys [n sum-x sum-x-sq]} suff-stats
+            value (cond (and (event/variable? a) (number? b)) b
+                        (and (number? a) (event/variable? b)) a
+                        :else (throw (ex-info "Cannot compute the log probability of an event without a variable."
+                                              {:event event})))
+            ;; Following https://github.com/probcomp/cgpm/blob/master/tests/test_teh_murphy.py
+            ;; for the conversion of the hyperparameters into the parameters for a Student t
+            ;; distribution (see also: https://www.cs.ubc.ca/~murphyk/Papers/bayesGauss.pdf)
+            rn  (+ r n)
+            nun (+ nu n)
+            mn  (/ (+ (* r m) sum-x) rn)
+            sn  (+ s sum-x-sq (* r m m) (* -1 rn mn mn))
+            an  (/ nun 2.0)
+            bn  (/ sn 2.0)
+            scalesq (/ (* bn (+ rn 1.0)) (* an rn))
+            df (* 2 an)
+            loc mn
+            scale (math/sqrt scalesq)]
+        (condp = operator
+          '< (math/log (student-t-cdf value df loc scale))
+          '> (math/log (- 1 (student-t-cdf value df loc scale)))
+          (throw (ex-info "Computing the log probability for operators other than <, > is not yet supported."
+                          {:operator operator})))))))
+
   gpm.proto/Incorporate
   (incorporate [this values]
     (let [x (get values var-name)]
-      (-> this
-          (assoc :suff-stats (-> suff-stats
-                                 (update :n inc)
-                                 (update :sum-x #(+ % x))
-                                 (update :sum-x-sq #(+ % (* x x))))))))
+      (assoc this :suff-stats (-> suff-stats
+                                  (update :n inc)
+                                  (update :sum-x #(+ % x))
+                                  (update :sum-x-sq #(+ % (* x x)))))))
   (unincorporate [this values]
     (let [x (get values var-name)]
-      (-> this
-          (assoc :suff-stats (-> suff-stats
-                                 (update :n dec)
-                                 (update :sum-x #(- % x))
-                                 (update :sum-x-sq #(- % (* x x))))))))
+      (assoc this :suff-stats (-> suff-stats
+                                  (update :n dec)
+                                  (update :sum-x #(- % x))
+                                  (update :sum-x-sq #(- % (* x x)))))))
 
   gpm.proto/Score
   (logpdf-score [_]
