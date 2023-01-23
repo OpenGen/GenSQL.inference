@@ -1,9 +1,10 @@
 (ns inferenceql.inference.gpm.ensemble
-  (:import [java.util ArrayList]
-           [org.apache.commons.math3.distribution EnumeratedDistribution]
-           [org.apache.commons.math3.util Pair])
   (:require [clojure.math :as math]
-            [inferenceql.inference.gpm.proto :as gpm.proto]))
+            [inferenceql.inference.gpm.proto :as gpm.proto]
+            [inferenceql.inference.utils :as utils])
+  #?(:clj (:import [java.util ArrayList]
+           [org.apache.commons.math3.distribution EnumeratedDistribution]
+           [org.apache.commons.math3.util Pair])))
 
 (defn map->enumerated-distribution
   [m]
@@ -23,10 +24,17 @@
     (let [gpm (if-not (seq constraints)
                 (rand-nth gpms)
                 (weighted-sample
-                 (zipmap gpms
-                         (map #(gpm.proto/logpdf % constraints {})
-                              gpms))))]
+                  (zipmap gpms
+                          (map #(gpm.proto/logpdf % constraints {})
+                               gpms))))]
       (gpm.proto/simulate gpm targets constraints)))
+
+  (logpdf [_ targets constraints]
+    (let [logpdfs (map #(gpm.proto/logpdf % targets constraints) gpms)]
+      (if (seq constraints)
+        (utils/logmeanexp-weighted (map #(gpm.proto/logpdf % constraints {}) gpms) 
+                                        logpdfs)
+      (utils/logmeanexp logpdfs))))
 
   gpm.proto/Variables
   (variables [_]
