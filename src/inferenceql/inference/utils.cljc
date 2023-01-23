@@ -140,6 +140,30 @@
                  ##-Inf
                  res)))))
 
+(defn logmeanexp [scores]
+  "Log-mean-exp operation for averaging log probabilities without
+  leaving the log domain"
+  (- (logsumexp scores) (math/log (count scores))))
+
+(defn logmeanexp-weighted [log_W, log_A]
+  "Weighted log-mean-exp operation for weighted averaging log probabilities without
+  leaving the log domain
+
+  taken from https://github.com/probcomp/bayeslite/blob/master/src/math_util.py
+  Given log W_0, log W_1, ..., log W_{n-1} and log A_0, log A_1,
+  ... log A_{n-1}, compute
+
+  log ((W_0 A_0 + ... + W_{n-1} A_{n-1})/(W_0 + ... + W_{n-1}))
+  = log (exp log (W_0 A_0) + ... + exp log (W_{n-1} A_{n-1}))
+  - log (exp log W_0 + ... + exp log W_{n-1})
+  = log (exp (log W_0 + log A_0) + ... + exp (log W_{n-1} + log A_{n-1}))
+  - log (exp log W_0 + ... + exp log W_{n-1})
+  = logsumexp (log W_0 + log A_0, ..., log W_{n-1} + log A_{n-1})
+  - logsumexp (log W_0, ..., log W_{n-1})
+  Pathological cases - infinities/NaNs"
+  (- (logsumexp (map + log_W log_A))
+     (logsumexp log_W)))
+
 (defn linspace
   "Generates a sequence of `n` numbers, linearly (evenly) spaced between `start` and `end`,
   the latter of which is exclusive."
