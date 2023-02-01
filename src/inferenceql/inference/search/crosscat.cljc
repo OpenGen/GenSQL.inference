@@ -1,5 +1,6 @@
 (ns inferenceql.inference.search.crosscat
   (:require [inferenceql.inference.kernels.hyperparameters :as col-hypers]
+            [inferenceql.inference.kernels.view :as view]
             [inferenceql.inference.gpm.column :as column]
             [inferenceql.inference.gpm.crosscat :as crosscat]))
 
@@ -29,15 +30,17 @@
         [view-id view] (get-largest-view xcat)
         latents (:latents view)
         binary-name :label
+        param 0.1
         binary-column (column/construct-column-from-latents
                        binary-name
                        :bernoulli
-                       {:alpha 0.5 :beta 0.5}
+                       {:alpha param :beta param}
                        latents
                        binary-labels
                        {:crosscat true})]
-    (as-> binary-column $
+    (view/infer-single-column-view-xcat (as-> binary-column $
           ;; Incorporate column.
           (crosscat/incorporate-column xcat $ view-id)
           ;; Perform inference.
-          (col-hypers/infer-column-xcat binary-name $))))
+          ;;(col-hypers/infer-column-xcat binary-name $)
+          ) 1 :label)))
