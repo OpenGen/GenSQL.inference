@@ -69,7 +69,6 @@
   (let [m 1 ;; XXX
         row-lls (map #(-> view (:columns) (view/column-logpdfs %)) data)
         lls (apply merge-with + row-lls)
-        _ (prn lls)
         crp-weights (gpm.utils/crp-weights view m)]
     (utils/log-normalize (merge-with + lls crp-weights))))
 
@@ -80,8 +79,7 @@
         q (mapv #(math/exp (get logp-map2 %)) ids)]
       [p q]))
 
-
-(defn relevance-probability
+(defn relevance-distance
   [gpm current-row comparison-rows view-indicator-col]
   (let [column-view-assignments (column-view-map model)
         ; XXX: need to unincorporate the current row, if comes from data!!!
@@ -91,15 +89,85 @@
         [p q] (p-vectors logp-map1 logp-map2)]
   (metrics/jensen-shannon-divergence p q)))
 
+(defn p-same-cluster [logp-map1 logp-map2]
+  (let [ids (keys logp-map1)]
+    (->>
+      (mapv
+        (fn [k1]
+          (mapv (fn [k2] (when (= k1 k2) (+ (get logp-map1 k1)  (get logp-map2 k2))))
+                ids))
+        ids)
+      (apply concat)
+      (remove nil?)
+      (map math/exp)
+      (apply + ))))
+
+
+(defn relevance-probability
+  [gpm current-row comparison-rows view-indicator-col]
+  (let [column-view-assignments (column-view-map model)
+        ; XXX: need to unincorporate the current row, if comes from data!!!
+        view-k (get column-view-assignments view-indicator-col)
+        logp-map1 (cluster-probabilities (view-k (:views model)) [current-row])
+        logp-map2 (cluster-probabilities (view-k (:views model)) comparison-rows)]
+    (p-same-cluster logp-map1 logp-map2)))
+
+
 (def model (edn/read {:readers gpm/readers} (PushbackReader. (io/reader "sample.test.edn"))))
 
+;; not similar
+(relevance-probability model
+                       {:x 10} ;; current row
+                       [{:y 107} {:x 4.7}] ;; rows to compare with
+                       :x ;; context column -- indicating view.
+                       )
+
+;; similar
 (relevance-probability model
                        {:x 0} ;; current row
                        [{:y 107} {:x 4.7}] ;; rows to compare with
                        :x ;; context column -- indicating view.
                        )
 
+;; similar -- less relevance prob
 (relevance-probability model
+                       {:x 0} ;; current row
+                       [{:y 107} ] ;; rows to compare with
+                       :x ;; context column -- indicating view.
+                       )
+
+;; similar -- more relevance prob
+(relevance-probability model
+                       {:x 0} ;; current row
+                       [{:y 107} {:x 4.7}
+                        {:y 107} {:x 4.7}
+                       ] ;; rows to compare with
+                       :x ;; context column -- indicating view.
+                       )
+
+;; The next two are counter-intuitive but expeced.
+;; this has a higher relevance probability.
+(relevance-probability model
+                       {:x 0} ;; current row
+                       [{:x 4.7} ] ;; rows to compare with
+                       :x ;; context column -- indicating view.
+                       )
+;; than this... because it's not as clear which generative process the current
+;; row stems from.
+(relevance-probability model
+                       {:x 4.7} ;; current row
+                       [{:x 4.7} ] ;; rows to compare with
+                       :x ;; context column -- indicating view.
+                       )
+
+;;;; searching via distance
+
+(relevance-distance model
+                       {:x 0}
+                       [{:y 107} {:x 4.7}]
+                       :x)
+
+(relevance-distance model
                        {:x 0}
                        [{:y 107} {:x 4.7}]
                        :a)
