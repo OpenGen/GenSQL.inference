@@ -1,8 +1,17 @@
 (ns inferenceql.inference.search.crosscat
-  (:require [inferenceql.inference.kernels.hyperparameters :as col-hypers]
-            [inferenceql.inference.kernels.view :as view]
+  (:import [java.io PushbackReader])
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]
+            [inferenceql.inference.kernels.hyperparameters :as col-hypers]
+            [inferenceql.inference.kernels.view :as view-kernel]
+            [inferenceql.inference.gpm.view :as view]
+            [clojure.math :as math]
+            [inferenceql.inference.gpm.utils :as gpm.utils]
             [inferenceql.inference.gpm.column :as column]
-            [inferenceql.inference.gpm.crosscat :as crosscat]))
+            [inferenceql.inference.gpm :as gpm]
+            [inferenceql.inference.gpm.crosscat :as crosscat]
+            [inferenceql.inference.gpm.multimixture.metrics :as metrics]
+            [inferenceql.inference.utils :as utils]))
 
 (defn get-largest-view
   "Given an `xcat` gpm, this returns the view-id and view with the largest number of columns.
@@ -38,9 +47,59 @@
                        latents
                        binary-labels
                        {:crosscat true})]
-    (view/infer-single-column-view-xcat (as-> binary-column $
+    (view-kernel/infer-single-column-view-xcat (as-> binary-column $
           ;; Incorporate column.
           (crosscat/incorporate-column xcat $ view-id)
           ;; Perform inference.
           ;;(col-hypers/infer-column-xcat binary-name $)
           ) 1 :label)))
+
+(defn columns-in-view
+  [view]
+  (keys (:columns (view (:views model)))))
+
+(defn column-view-map
+  [model]
+  (->> (keys (:views model))
+       (map (fn [v] (map (fn [col] [col v]) (columns-in-view v))))
+       (apply concat)
+       (into {})))
+
+(defn cluster-probabilities [view data]
+  (let [m 1 ;; XXX
+        row-lls (map #(-> view (:columns) (view/column-logpdfs %)) data)
+        lls (apply merge-with + row-lls)
+        _ (prn lls)
+        crp-weights (gpm.utils/crp-weights view m)]
+    (utils/log-normalize (merge-with + lls crp-weights))))
+
+
+(defn p-vectors [logp-map1 logp-map2]
+  (let [ids (keys logp-map1)
+        p (mapv #(math/exp (get logp-map1 %)) ids)
+        q (mapv #(math/exp (get logp-map2 %)) ids)]
+      [p q]))
+
+
+(defn relevance-probability
+  [gpm current-row comparison-rows view-indicator-col]
+  (let [column-view-assignments (column-view-map model)
+        ; XXX: need to unincorporate the current row, if comes from data!!!
+        view-k (get column-view-assignments view-indicator-col)
+        logp-map1 (cluster-probabilities (view-k (:views model)) [current-row])
+        logp-map2 (cluster-probabilities (view-k (:views model)) comparison-rows)
+        [p q] (p-vectors logp-map1 logp-map2)]
+  (metrics/jensen-shannon-divergence p q)))
+
+(def model (edn/read {:readers gpm/readers} (PushbackReader. (io/reader "sample.test.edn"))))
+
+(relevance-probability model
+                       {:x 0} ;; current row
+                       [{:y 107} {:x 4.7}] ;; rows to compare with
+                       :x ;; context column -- indicating view.
+                       )
+
+(relevance-probability model
+                       {:x 0}
+                       [{:y 107} {:x 4.7}]
+                       :a)
