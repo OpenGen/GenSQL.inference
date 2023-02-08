@@ -113,31 +113,31 @@
     (p-same-cluster logp-map1 logp-map2)))
 
 
-(def model (edn/read {:readers gpm/readers} (PushbackReader. (io/reader "sample.test.edn"))))
+#_(def model (edn/read {:readers gpm/readers} (PushbackReader. (io/reader "sample.test.edn"))))
 
 ;; not similar
-(relevance-probability model
+#_(relevance-probability model
                        {:x 10} ;; current row
                        [{:y 107} {:x 4.7}] ;; rows to compare with
                        :x ;; context column -- indicating view.
                        )
 
 ;; similar
-(relevance-probability model
+#_(relevance-probability model
                        {:x 0} ;; current row
                        [{:y 107} {:x 4.7}] ;; rows to compare with
                        :x ;; context column -- indicating view.
                        )
 
 ;; similar -- less relevance prob
-(relevance-probability model
+#_(relevance-probability model
                        {:x 0} ;; current row
                        [{:y 107} ] ;; rows to compare with
                        :x ;; context column -- indicating view.
                        )
 
 ;; similar -- more relevance prob
-(relevance-probability model
+#_(relevance-probability model
                        {:x 0} ;; current row
                        [{:y 107} {:x 4.7}
                         {:y 107} {:x 4.7}
@@ -147,14 +147,14 @@
 
 ;; The next two are counter-intuitive but expeced.
 ;; this has a higher relevance probability.
-(relevance-probability model
+#_(relevance-probability model
                        {:x 0} ;; current row
                        [{:x 4.7} ] ;; rows to compare with
                        :x ;; context column -- indicating view.
                        )
 ;; than this... because it's not as clear which generative process the current
 ;; row stems from.
-(relevance-probability model
+#_(relevance-probability model
                        {:x 4.7} ;; current row
                        [{:x 4.7} ] ;; rows to compare with
                        :x ;; context column -- indicating view.
@@ -162,12 +162,12 @@
 
 ;;;; searching via distance
 
-(relevance-distance model
+#_(relevance-distance model
                        {:x 0}
                        [{:y 107} {:x 4.7}]
-                       :x)
+                       :x) ;; this is fine
 
-(relevance-distance model
+#_(relevance-distance model
                        {:x 0}
                        [{:y 107} {:x 4.7}]
-                       :a)
+                       :a) ;; this is not -- because the both rows have 0 info on the relevant view, both return the prior. Distance is zero.
