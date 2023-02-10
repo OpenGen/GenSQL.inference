@@ -1,5 +1,5 @@
 (ns inferenceql.inference.search.crosscat
-  (:import [java.io PushbackReader])
+  #_(:import [java.io PushbackReader])
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [inferenceql.inference.kernels.hyperparameters :as col-hypers]
@@ -55,22 +55,27 @@
           ) 1 :label)))
 
 (defn columns-in-view
-  [view]
+  [view model]
   (keys (:columns (view (:views model)))))
 
 (defn column-view-map
   [model]
   (->> (keys (:views model))
-       (map (fn [v] (map (fn [col] [col v]) (columns-in-view v))))
+       (map (fn [v] (map (fn [col] [col v]) (columns-in-view v model))))
        (apply concat)
        (into {})))
 
 (defn cluster-probabilities [view data]
   (let [m 1 ;; XXX
-        row-lls (map #(-> view (:columns) (view/column-logpdfs %)) data)
-        lls (apply merge-with + row-lls)
-        crp-weights (gpm.utils/crp-weights view m)]
-    (utils/log-normalize (merge-with + lls crp-weights))))
+        crp-weights (gpm.utils/crp-weights view m)
+        row-lls (map #(-> view (:columns) (view/column-logpdfs %)) data) ]
+    (if (= row-lls `({}))
+      crp-weights
+      (let [lls (apply merge-with + row-lls)
+            _ (println "lls")
+            _ (prn lls)
+            ]
+        (utils/log-normalize (merge-with + lls crp-weights))))))
 
 
 (defn p-vectors [logp-map1 logp-map2]
@@ -81,11 +86,11 @@
 
 (defn relevance-distance
   [gpm current-row comparison-rows view-indicator-col]
-  (let [column-view-assignments (column-view-map model)
+  (let [column-view-assignments (column-view-map gpm)
         ; XXX: need to unincorporate the current row, if comes from data!!!
         view-k (get column-view-assignments view-indicator-col)
-        logp-map1 (cluster-probabilities (view-k (:views model)) [current-row])
-        logp-map2 (cluster-probabilities (view-k (:views model)) comparison-rows)
+        logp-map1 (cluster-probabilities (view-k (:views gpm)) [current-row])
+        logp-map2 (cluster-probabilities (view-k (:views gpm)) comparison-rows)
         [p q] (p-vectors logp-map1 logp-map2)]
   (metrics/jensen-shannon-divergence p q)))
 
@@ -105,11 +110,20 @@
 
 (defn relevance-probability
   [gpm current-row comparison-rows view-indicator-col]
-  (let [column-view-assignments (column-view-map model)
+  (let [
+        column-view-assignments (column-view-map gpm)
         ; XXX: need to unincorporate the current row, if comes from data!!!
         view-k (get column-view-assignments view-indicator-col)
-        logp-map1 (cluster-probabilities (view-k (:views model)) [current-row])
-        logp-map2 (cluster-probabilities (view-k (:views model)) comparison-rows)]
+        _ (println "view-k")
+        _ (prn view-k)
+        logp-map1 (cluster-probabilities (view-k (:views gpm)) [current-row])
+        logp-map2 (cluster-probabilities (view-k (:views gpm)) comparison-rows)
+        _ (println "log probabilities")
+        _ (println "current row")
+        _ (prn logp-map1)
+        _ (println "comparison")
+        _ (prn logp-map2)
+        _ (println "------")]
     (p-same-cluster logp-map1 logp-map2)))
 
 
