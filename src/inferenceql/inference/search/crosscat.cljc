@@ -107,17 +107,31 @@
       (map math/exp)
       (apply + ))))
 
+(defn recurs-uninc
+  [view ids rows]
+  (if (empty? ids)
+    view
+    (recurs-uninc (view/incorporate-by-rowid view
+                                             (first rows)
+                                             (first ids))
+                  (rest ids) (rest rows))))
+
 
 (defn relevance-probability
-  [gpm current-row comparison-rows view-indicator-col]
+  [gpm current-row comparison-rows view-indicator-col id ids]
   (let [
         column-view-assignments (column-view-map gpm)
         ; XXX: need to unincorporate the current row, if comes from data!!!
         view-k (get column-view-assignments view-indicator-col)
         _ (println "view-k")
         _ (prn view-k)
-        logp-map1 (cluster-probabilities (view-k (:views gpm)) [current-row])
-        logp-map2 (cluster-probabilities (view-k (:views gpm)) comparison-rows)
+        _ (prn id)
+        _ (prn ids)
+        view-removed-temp (view/incorporate-by-rowid (view-k (:views gpm)) current-row id)
+        view-removed (recurs-uninc view-removed-temp ids comparison-rows)
+        _ (prn (type view-removed))
+        logp-map1 (cluster-probabilities view-removed [current-row])
+        logp-map2 (cluster-probabilities view-removed comparison-rows)
         _ (println "log probabilities")
         _ (println "current row")
         _ (prn logp-map1)
