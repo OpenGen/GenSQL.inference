@@ -127,9 +127,10 @@
         _ (prn view-k)
         _ (prn id)
         _ (prn ids)
-        view-removed-temp (view/incorporate-by-rowid (view-k (:views gpm)) current-row id)
-        view-removed (recurs-uninc view-removed-temp ids comparison-rows)
-        _ (prn (type view-removed))
+        ;view-removed-temp (view/unincorporate-by-rowid (view-k (:views gpm)) current-row id)
+        ;view-removed (recurs-uninc view-removed-temp ids comparison-rows)
+        ;; XXX remove
+        view-removed (view-k (:views gpm))
         logp-map1 (cluster-probabilities view-removed [current-row])
         logp-map2 (cluster-probabilities view-removed comparison-rows)
         _ (println "log probabilities")
