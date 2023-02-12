@@ -72,12 +72,12 @@
     (if (= row-lls `({}))
       crp-weights
       (let [lls (apply merge-with + row-lls)
-            _ (println "lls")
-            _ (prn lls)
+            ;_ (println "lls")
+            ;_ (prn lls)
             ]
         (utils/log-normalize (merge-with + lls crp-weights))))))
 
-
+(def  mem-cluster-probabilities (memoize cluster-probabilities))
 (defn p-vectors [logp-map1 logp-map2]
   (let [ids (keys logp-map1)
         p (mapv #(math/exp (get logp-map1 %)) ids)
@@ -123,22 +123,23 @@
         column-view-assignments (column-view-map gpm)
         ; XXX: need to unincorporate the current row, if comes from data!!!
         view-k (get column-view-assignments view-indicator-col)
-        _ (println "view-k")
-        _ (prn view-k)
-        _ (prn id)
-        _ (prn ids)
+        ;_ (println "view-k")
+        ;_ (prn view-k)
+        ;_ (prn id)
+        ;_ (prn ids)
         ;view-removed-temp (view/unincorporate-by-rowid (view-k (:views gpm)) current-row id)
         ;view-removed (recurs-uninc view-removed-temp ids comparison-rows)
         ;; XXX remove
         view-removed (view-k (:views gpm))
         logp-map1 (cluster-probabilities view-removed [current-row])
-        logp-map2 (cluster-probabilities view-removed comparison-rows)
-        _ (println "log probabilities")
-        _ (println "current row")
-        _ (prn logp-map1)
-        _ (println "comparison")
-        _ (prn logp-map2)
-        _ (println "------")]
+        logp-map2 (mem-cluster-probabilities view-removed comparison-rows)
+        ;_ (println "log probabilities")
+        ;_ (println "current row")
+        ;_ (prn logp-map1)
+        ;_ (println "comparison")
+        ;_ (prn logp-map2)
+        ;_ (println "------")
+        ]
     (p-same-cluster logp-map1 logp-map2)))
 
 
