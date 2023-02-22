@@ -8,8 +8,6 @@
 
 (defn map->enumerated-distribution
   [m]
-  (when-not (every? (complement pos?) (vals m))
-    (throw (ex-info "Weights must be negative" {:weights (vals m)})))
   (let [pairs (ArrayList.)]
     (doseq [[k v] m]
       (.add pairs (Pair. k (math/exp (double v)))))
