@@ -25,7 +25,7 @@
 (s/fdef gamma :args (s/cat :number pos?))
 
 (defn log-gamma
-  "Returns Gamma(z + 1 = number) using Lanczos approximation."
+  "Returns ln(Gamma(z + 1 = number)) using Lanczos approximation."
   [number]
   (if (< number 0.5)
     (- (math/log math/PI)
