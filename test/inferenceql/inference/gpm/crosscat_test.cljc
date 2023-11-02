@@ -1,7 +1,8 @@
 (ns inferenceql.inference.gpm.crosscat-test
-  (:require [inferenceql.inference.test-models.crosscat :refer [model]]
-            [clojure.test :refer [deftest is]]
-            [inferenceql.inference.gpm :as gpm]))
+  (:require [clojure.test :refer [deftest is]]
+            [inferenceql.inference.gpm :as gpm]
+            [inferenceql.inference.gpm.crosscat :as crosscat]
+            [inferenceql.inference.test-models.crosscat :refer [model]]))
 
 (deftest simulate
   (let [sim-no-constraint (gpm/simulate model [:color :height :flip] {})
@@ -34,3 +35,16 @@
 
 (deftest variables
   (is (= #{:color :height :flip} (gpm/variables model))))
+
+(deftest prune
+  (let [color-model (crosscat/prune model #{:color})]
+    (is (= #{:color} (gpm/variables color-model)))
+    ;; :color and :height are dependent in `model`, but since :height  has been
+    ;; pruned in `color-model` we should get different `gpm/logpdf` values for
+    ;; each.
+    (is (not (= (gpm/logpdf model {:color "red"} {:height 10})
+                (gpm/logpdf color-model {:color "red"} {:height 10}))))
+    ;; `:color` and `:flip` are independent in `model`, so they should still be
+    ;; independent in `color-model`.
+    (is (= (gpm/logpdf model {:color "red"} {:flip true})
+           (gpm/logpdf color-model {:color "red"} {:flip true})))))

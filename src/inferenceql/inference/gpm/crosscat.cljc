@@ -102,11 +102,11 @@
     ;; Catch overlap of targets and constraints and assure constraint is sampled. 
     (let [intersection (set/intersection (set targets) (set (keys constraints)))
           unconstrained-targets (vec (remove intersection (set targets)))]
-        (->> views
-             (map (fn [[_ view]]
-                    (gpm.proto/simulate view unconstrained-targets constraints)))
-             (filter not-empty)
-             (apply merge (select-keys constraints intersection)))))
+      (->> views
+           (map (fn [[_ view]]
+                  (gpm.proto/simulate view unconstrained-targets constraints)))
+           (filter not-empty)
+           (apply merge (select-keys constraints intersection)))))
   gpm.proto/Incorporate
   (incorporate [this x]
     (let [row-id (gensym)]
@@ -352,3 +352,52 @@
   [stattype]
   (and (record? stattype)
        (instance? XCat stattype)))
+
+(defn prune-view
+  [view cols]
+  (update view :columns #(select-keys % cols)))
+
+(defn prune
+  "Return `xcat`, but with all variables other than `cols` removed."
+  [xcat cols]
+  (assert (xcat? xcat))
+  (update xcat :views (fn [views]
+                        (update-vals views #(prune-view % cols)))))
+
+(comment
+
+  (require '[inferenceql.inference.gpm :as gpm]
+           '[portal.api :as portal])
+
+  (portal/open {:theme :portal.colors/gruvbox})
+  (add-tap #'portal/submit)
+  (portal/close)
+
+  (def model (gpm/read-string (slurp "/Users/zane/projects/inferenceql.experiments/domain/satellites/clojurecat/sample.0.edn")))
+
+  (gpm/variables model)
+
+  (select-keys (get-in model [:views :view_0 :columns])
+               #{:Eccentricity})
+
+  (let [view (get-in model [:views :view_0])
+        pruned-view (prune-view view #{:Eccentricity})]
+    #_
+    (gpm/simulate pruned-view [:Eccentricity :Launch_Mass_kg] {:Launch_Mass_kg 42})
+    (gpm/variables pruned-view))
+
+  (let [pruned-xcat (prune model #{:Eccentricity})]
+    (gpm/simulate pruned-xcat (gpm/variables pruned-xcat) {})
+    ;; (gpm/variables pruned-xcat)
+    )
+
+  (type (prune model #{:Eccentricity}))
+
+  (-> model :views :view_0 :columns keys)
+
+  (tap> model)
+
+
+  ;; SELECT * FROM (GENERATE color UNDER model CONDITIONED BY flip = true) LIMIT 1
+
+  ,)
