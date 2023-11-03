@@ -83,7 +83,7 @@
         (= targets constraints)
         0.0
         ;; If the targets and constraints are not equal but the overlapping parts are,
-        ;; just remove the overlapping keys and recur the scores. 
+        ;; just remove the overlapping keys and recur the scores.
         (every? (fn [shared-key]
                   (= (shared-key targets)
                      (shared-key constraints)))
@@ -99,7 +99,7 @@
         ;; If the intersection keys map to different values, the score is -Inf.
         :else ##-Inf)))
   (simulate [_ targets constraints]
-    ;; Catch overlap of targets and constraints and assure constraint is sampled. 
+    ;; Catch overlap of targets and constraints and assure constraint is sampled.
     (let [intersection (set/intersection (set targets) (set (keys constraints)))
           unconstrained-targets (vec (remove intersection (set targets)))]
       (->> views
@@ -107,6 +107,7 @@
                   (gpm.proto/simulate view unconstrained-targets constraints)))
            (filter not-empty)
            (apply merge (select-keys constraints intersection)))))
+
   gpm.proto/Incorporate
   (incorporate [this x]
     (let [row-id (gensym)]
@@ -122,23 +123,32 @@
                                                                (update :columns update-hyper-grids)))))
                       xcat
                       views)))))
+
   gpm.proto/Score
   (logpdf-score [_]
     (reduce (fn [acc [_ view]]
               (+ acc (gpm.proto/logpdf-score view)))
             0
             views))
+
   gpm.proto/Variables
   (variables [{:keys [views]}]
     (into #{}
           (mapcat gpm.proto/variables)
           (vals views)))
+
   gpm.proto/Condition
   (condition [this conditions]
     (conditioned/condition this conditions))
+
   gpm.proto/Constrain
   (constrain [this event opts]
-    (constrained/constrain this event opts)))
+    (constrained/constrain this event opts))
+
+  gpm.proto/Prune
+  (prune [this vars]
+    (let [prune-view #(update % :columns select-keys vars)]
+      (update this :views #(update-vals % prune-view)))))
 
 (defn incorporate-column
   "Incorporates a column in to the model at the specified view."
@@ -352,17 +362,6 @@
   [stattype]
   (and (record? stattype)
        (instance? XCat stattype)))
-
-(defn prune-view
-  [view cols]
-  (update view :columns #(select-keys % cols)))
-
-(defn prune
-  "Return `xcat`, but with all variables other than `cols` removed."
-  [xcat cols]
-  (assert (xcat? xcat))
-  (update xcat :views (fn [views]
-                        (update-vals views #(prune-view % cols)))))
 
 (comment
 

@@ -74,7 +74,15 @@
 
   gpm.proto/Variables
   (variables [_]
-    (gpm.proto/variables gpm)))
+    (gpm.proto/variables gpm))
+
+  gpm.proto/Prune
+  (prune [_ vars]
+    (let [pruned-gpm (gpm.proto/prune gpm vars)]
+      (map->ConstrainedGPM {:gpm pruned-gpm
+                            :pred? pred?
+                            :variables variables
+                            :sample-size sample-size}))))
 
 (defn constrain
   "Constrains gpm based on event via rejection sampling. Arguments are the same

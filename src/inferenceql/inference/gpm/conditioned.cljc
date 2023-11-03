@@ -18,7 +18,12 @@
   gpm.proto/Condition
   (condition [_ new-conditions]
     (let [merged-conditions (merge conditions new-conditions)]
-      (->ConditionedGPM gpm merged-conditions))))
+      (->ConditionedGPM gpm merged-conditions)))
+
+  gpm.proto/Prune
+  (prune [_ vars]
+    (let [pruned-gpm (gpm.proto/prune gpm vars)]
+      (->ConditionedGPM gpm pruned-gpm))))
 
 (defn condition
   "Conditions gpm based on conditions via rejection sampling. Arguments are the

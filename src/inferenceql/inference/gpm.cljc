@@ -193,3 +193,8 @@
   "Returns the log probability of of an event under a model."
   [gpm event]
   (gpm-proto/logprob gpm event))
+
+(defn prune
+  "Return `gpm`, but with all variables other than `vars` removed."
+  [gpm vars]
+  (gpm-proto/prune gpm vars))

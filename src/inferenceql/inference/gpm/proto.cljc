@@ -39,3 +39,6 @@
 
 (defprotocol MutualInfo
   (mutual-info [this event-a event-b]))
+
+(defprotocol Prune
+  (prune [this variables]))

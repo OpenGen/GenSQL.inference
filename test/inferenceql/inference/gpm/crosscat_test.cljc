@@ -37,7 +37,7 @@
   (is (= #{:color :height :flip} (gpm/variables model))))
 
 (deftest prune
-  (let [color-model (crosscat/prune model #{:color})]
+  (let [color-model (gpm/prune model #{:color})]
     (is (= #{:color} (gpm/variables color-model)))
     ;; :color and :height are dependent in `model`, but since :height  has been
     ;; pruned in `color-model` we should get different `gpm/logpdf` values for
