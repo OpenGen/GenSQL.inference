@@ -26,6 +26,7 @@
 
 (defprotocol Variables
   "Given a GPM, returns the variables it supports."
+  :extend-via-metadata true
   (variables [this]))
 
 (defprotocol Condition

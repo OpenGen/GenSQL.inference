@@ -8,6 +8,7 @@
         org.clojure/data.json {:mvn/version "2.4.0"}
         org.clojure/math.combinatorics {:mvn/version "0.1.6"}
         io.github.probcomp/metaprob {:git/sha "43c4bea80772ed8b2baa51cd5ac6c593a34a3a8b"}
+        io.github.inferenceql/gen.clj {:git/sha "febf288d700d3c3c7b42a7723ff5601dc4b0d690"}
         net.cgrand/xforms {:mvn/version "0.19.2"}
         progrock/progrock {:mvn/version "0.1.2"}
         cljs-bean/cljs-bean {:mvn/version "1.7.0"}}
