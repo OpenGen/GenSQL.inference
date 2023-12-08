@@ -23,7 +23,7 @@
   gpm.proto/Prune
   (prune [_ vars]
     (let [pruned-gpm (gpm.proto/prune gpm vars)]
-      (->ConditionedGPM gpm pruned-gpm))))
+      (->ConditionedGPM pruned-gpm conditions))))
 
 (defn condition
   "Conditions gpm based on conditions via rejection sampling. Arguments are the
