@@ -74,6 +74,13 @@
                     gpm
                     (:views xcat))))))
 
+(defn overlap
+  [view-content vars]
+  (not (empty? (select-keys (:columns view-content) vars))))
+
+(defn prune-views [model vars]
+    (update model :views #(into {} (filter (fn [[viewid view-content]] (overlap view-content vars)) %))))
+
 (defrecord XCat [views latents]
   gpm.proto/GPM
   (logpdf [_ targets constraints]
@@ -147,8 +154,7 @@
 
   gpm.proto/Prune
   (prune [this vars]
-    (let [prune-view #(update % :columns select-keys vars)]
-      (update this :views #(update-vals % prune-view)))))
+      (prune-views this vars)))
 
 (defn incorporate-column
   "Incorporates a column in to the model at the specified view."
