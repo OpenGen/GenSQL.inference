@@ -17,9 +17,9 @@
     (is (= 0.4 (:height sim-constraints-are-target))))))
 
 #?(:clj (deftest logpdf
-  (let [x-and-y (gpm/logpdf models {:color "red" :flip true} {})
-        x-given-y (gpm/logpdf models {:color "red"} {:flip true})
-        y (gpm/logpdf models {:flip true} {}) ]
+  (let [x-and-y (gpm/logpdf models {:color "red" :height 0.4} {})
+        x-given-y (gpm/logpdf models {:color "red"} {:height 0.4})
+        y (gpm/logpdf models {:height 0.4} {}) ]
     (is (number? x-and-y))
     (is (number? x-given-y))
     (is (number? y))
