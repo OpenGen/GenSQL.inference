@@ -1,5 +1,7 @@
 (ns inferenceql.inference.gpm.ensemble
   (:require [clojure.math :as math]
+            [inferenceql.inference.gpm.conditioned :as conditioned]
+            [inferenceql.inference.gpm.constrained :as constrained]
             [inferenceql.inference.gpm.proto :as gpm.proto]
             [inferenceql.inference.utils :as utils])
   #?(:clj (:import [java.util ArrayList]
@@ -32,13 +34,21 @@
   (logpdf [_ targets constraints]
     (let [logpdfs (map #(gpm.proto/logpdf % targets constraints) gpms)]
       (if (seq constraints)
-        (utils/logmeanexp-weighted (map #(gpm.proto/logpdf % constraints {}) gpms) 
+        (utils/logmeanexp-weighted (map #(gpm.proto/logpdf % constraints {}) gpms)
                                         logpdfs)
       (utils/logmeanexp logpdfs))))
 
   gpm.proto/Variables
   (variables [_]
-    (gpm.proto/variables (first gpms))))
+    (gpm.proto/variables (first gpms)))
+
+  gpm.proto/Condition
+  (condition [this conditions]
+    (conditioned/condition this conditions))
+
+  gpm.proto/Constrain
+  (constrain [this event opts]
+    (constrained/constrain this event opts)))
 
 (defn ensemble
   [models]
