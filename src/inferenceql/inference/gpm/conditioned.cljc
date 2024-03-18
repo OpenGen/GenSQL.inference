@@ -18,7 +18,8 @@
   gpm.proto/Condition
   (condition [_ new-conditions]
     (let [merged-conditions (merge conditions new-conditions)]
-      (->ConditionedGPM gpm merged-conditions))))
+      ;; arrow ctor form was causing issues, so using dot form
+      (ConditionedGPM. gpm merged-conditions))))
 
 (defn condition
   "Conditions gpm based on conditions via rejection sampling. Arguments are the

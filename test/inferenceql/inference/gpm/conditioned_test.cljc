@@ -102,3 +102,17 @@
     {:x 0} {:x 1} {} {:x 1}
     {:x 0} {} {:x 1} {:x 1}
     {} {:x 0} {:x 1} {:x 1}))
+
+(deftest merged-conditions
+  (are [c1 c2 expected]
+    (let [model (conditioned/condition nil c1)
+          conditioned-model (gpm.proto/condition model c2)]
+      (= expected (:conditions conditioned-model)))
+    {} {} {}
+    {} {:x 0} {:x 0}
+    {:x 0} {} {:x 0}
+    {:x 0} {:x 1} {:x 1}
+    {:x 0} {:y 1} {:x 0 :y 1}
+    {:y 1} {:x 0} {:x 0 :y 1}
+    {:x 0 :z 2} {:y 1} {:x 0 :y 1 :z 2}
+    {:x 0} {:y 1 :z 2} {:x 0 :y 1 :z 2}))
