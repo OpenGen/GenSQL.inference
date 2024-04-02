@@ -36,6 +36,19 @@
   (simulate [this _ _]
     (throw (Exception. "Poisson simulate not implemented")))
 
+  gpm.proto/Incorporate
+  (incorporate [this values]
+    (let [x (get values var-name)]
+      (assoc this :suff-stats (-> suff-stats
+                                  (update :n inc)
+                                  (update :sum-x #(+ % x))
+                                  (update :sum-log-fact #(+ % (log-gamma (+ x 1))))))))
+  (unincorporate [this values]
+    (let [x (get values var-name)]
+      (assoc this :suff-stats (-> suff-stats
+                                  (update :n dec)
+                                  (update :sum-x #(- % x))
+                                  (update :sum-log-fact #(- % (log-gamma (+ x 1))))))))
 
   gpm.proto/Variables
   (variables [{:keys [var-name]}]
