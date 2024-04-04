@@ -12,6 +12,7 @@
             [inferenceql.inference.gpm.primitive-gpms.bernoulli :as bernoulli]
             [inferenceql.inference.gpm.primitive-gpms.categorical :as categorical]
             [inferenceql.inference.gpm.primitive-gpms.gaussian :as gaussian]
+            [inferenceql.inference.gpm.primitive-gpms.poisson :as poisson]
             [inferenceql.inference.gpm.proto :as gpm-proto]
             [inferenceql.inference.gpm.view :as view]))
 
@@ -152,6 +153,7 @@
    'inferenceql.inference.gpm.primitive_gpms.bernoulli.Bernoulli bernoulli/map->Bernoulli
    'inferenceql.inference.gpm.primitive_gpms.categorical.Categorical categorical/map->Categorical
    'inferenceql.inference.gpm.primitive_gpms.gaussian.Gaussian gaussian/map->Gaussian
+   'inferenceql.inference.gpm.primitive_gpms.poisson.Poisson poisson/map->Poisson
    'inferenceql.inference.gpm.view.View view/map->View})
 
 (defn as-gpm
