@@ -1,4 +1,4 @@
-# inferenceql.inference
+# GenSQL.inference
 
-![tests](https://github.com/probcomp/inferenceql.inference/workflows/tests/badge.svg)
-![linter](https://github.com/probcomp/inferenceql.inference/workflows/lint/badge.svg)
+![tests](https://github.com/OpenGen/GenSQL.inference/workflows/tests/badge.svg)
+![linter](https://github.com/OpenGen/GenSQL.inference/workflows/lint/badge.svg)
