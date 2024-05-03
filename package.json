@@ -2,5 +2,9 @@
   "dependencies": {
     "vega-cli": "5.28.0",
     "vega-lite": "5.18.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.2.2"
   }
 }
