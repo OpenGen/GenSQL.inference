@@ -85,8 +85,8 @@
         ;; If the targets and constraints are not equal but the overlapping parts are,
         ;; just remove the overlapping keys and recur the scores. 
         (every? (fn [shared-key]
-                  (= (shared-key targets)
-                     (shared-key constraints)))
+                  (= (get targets shared-key)
+                     (get constraints shared-key)))
                 intersection)
         (reduce-kv (fn [logp _ view]
                      ;; Filtering view variables happens naturally.
