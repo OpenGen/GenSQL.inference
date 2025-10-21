@@ -21,22 +21,27 @@
     (.sample ed)))
 
 (defrecord Ensemble [gpms]
+  gpm.proto/LogProb
+  (logprob [_ event]
+    (let [logprobs (map #(gpm.proto/logprob % event) gpms)]
+      (utils/logmeanexp logprobs)))
+
   gpm.proto/GPM
   (simulate [_ targets constraints]
     (let [gpm (if-not (seq constraints)
                 (rand-nth gpms)
                 (weighted-sample
-                  (zipmap gpms
-                          (map #(gpm.proto/logpdf % constraints {})
-                               gpms))))]
+                 (zipmap gpms
+                         (map #(gpm.proto/logpdf % constraints {})
+                              gpms))))]
       (gpm.proto/simulate gpm targets constraints)))
 
   (logpdf [_ targets constraints]
     (let [logpdfs (map #(gpm.proto/logpdf % targets constraints) gpms)]
       (if (seq constraints)
         (utils/logmeanexp-weighted (map #(gpm.proto/logpdf % constraints {}) gpms)
-                                        logpdfs)
-      (utils/logmeanexp logpdfs))))
+                                   logpdfs)
+        (utils/logmeanexp logpdfs))))
 
   gpm.proto/Variables
   (variables [_]

@@ -81,7 +81,7 @@
       ;; If targets are the same as constraints, the logpdf is 0.
       (cond
         (= targets constraints)
-        0.0
+        0.0 ;; Should be ##Inf for continuous functions
         ;; If the targets and constraints are not equal but the overlapping parts are,
         ;; just remove the overlapping keys and recur the scores. 
         (every? (fn [shared-key]
@@ -102,11 +102,11 @@
     ;; Catch overlap of targets and constraints and assure constraint is sampled. 
     (let [intersection (set/intersection (set targets) (set (keys constraints)))
           unconstrained-targets (vec (remove intersection (set targets)))]
-        (->> views
-             (map (fn [[_ view]]
-                    (gpm.proto/simulate view unconstrained-targets constraints)))
-             (filter not-empty)
-             (apply merge (select-keys constraints intersection)))))
+      (->> views
+           (map (fn [[_ view]]
+                  (gpm.proto/simulate view unconstrained-targets constraints)))
+           (filter not-empty)
+           (apply merge (select-keys constraints intersection)))))
   gpm.proto/Incorporate
   (incorporate [this x]
     (let [row-id (gensym)]

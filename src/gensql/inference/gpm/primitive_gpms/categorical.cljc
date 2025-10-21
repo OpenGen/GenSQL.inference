@@ -16,7 +16,7 @@
         constrained? (if (= x x') 0 ##-Inf)
         :else (let [counts (:counts suff-stats)
                     alpha  (:alpha hyperparameters)
-                    numer  (math/log (+ alpha (get counts x)))
+                    numer  (math/log (+ alpha (get counts x 0)))
                     denom  (math/log (+ (* alpha (count counts))
                                         (reduce + (vals counts))))]
                 (- numer denom)))))
